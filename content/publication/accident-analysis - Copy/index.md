@@ -1,41 +1,33 @@
 ---
-abstract: Increased cycling uptake can improve population health, but barriers include real and perceived risks. Crash risk factors are important to understand in order to improve safety and increase cycling uptake. Many studies of cycling crash risk are based on combining diverse sources of crash and exposure data, such as police databases (crashes) and travel surveys (exposure), based on shared geography and time. When conflating crash and exposure data from different sources, the risk factors that can be quantified are only those variables common to both datasets, which tend to be limited to geography (e.g. countries, provinces, municipalities) and a few general road user characteristics (e.g. gender and age strata). The Physical Activity through Sustainable Transport Approaches (PASTA) project was a prospective cohort study that collected both crash and exposure data from seven European cities (Antwerp, Barcelona, London, Örebro, Rome, Vienna and Zürich). The goal of this research was to use data from the PASTA project to quantify exposure-adjusted crash rates and model adjusted crash risk factors, including detailed sociodemographic characteristics, attitudes about transportation, neighbourhood built environment features and location by city. We used negative binomial regression to model the influence of risk factors independent of exposure. Of the 4,180 cyclists, 10.2 % reported 535 crashes. We found that overall crash rates were 6.7 times higher in London, the city with the highest crash rate, relative to Örebro, the city with the lowest rate. Differences in overall crash rates between cities are driven largely by crashes that did not require medical treatment and that involved motor-vehicles. In a parsimonious crash risk model, we found higher crash risks for less frequent cyclists, men, those who perceive cycling to not be well regarded in their neighbourhood, and those who live in areas of very high building density. Longitudinal collection of crash and exposure data can provide important insights into individual differences in crash risk. Substantial differences in crash risks between cities, neighbourhoods and population groups suggest there is great potential for improvement in cycling safety.
+abstract: "Bicycling is promoted as a transportation and population health strategy globally. Yet bicycling has low uptake in North America (1%–2% of trips) compared with European bicycling cities (15%–40% of trips) and shows marked sex and age trends. Safety concerns due to collisions with motor vehicles are primary barriers. To attract the broader population to bicycling, many cities are making investments in bicycle infrastructure. These interventions hold promise for improving population health given the potential for increased physical activity and improved safety, but such outcomes have been largely unstudied. In 2016, the City of Victoria, Canada, committed to build a connected network of infrastructure that separates bicycles from motor vehicles, designed to attract people of ‘all ages and abilities’ to bicycling. This natural experiment study examines the impacts of the City of Victoria’s investment in a bicycle network on active travel and safety outcomes. The specific objectives are to (1) estimate changes in active travel, perceived safety and bicycle safety incidents; (2) analyse spatial inequities in access to bicycle infrastructure and safety incidents; and (3) assess health-related economic benefits. The study is in three Canadian cities (intervention: Victoria; comparison: Kelowna, Halifax). We will administer population-based surveys in 2016, 2018 and 2021 (1000 people/city). The primary outcome is the proportion of people reporting bicycling. Secondary outcomes are perceived safety and bicycle safety incidents. Spatial analyses will compare the distribution of bicycle infrastructure and bicycle safety incidents across neighbourhoods and across time. We will also calculate the economic benefits of bicycling using WHO’s Health Economic Assessment Tool."
 
 authors:
-- admin
-- Thomas Götschi
-- Trisalyn Nelson 
-- Esther Anaya-Boig 
-- Ione Avila-Palencia 
-- Alberto Castro 
-- Tom Cole-Hunter
-- Audrey de Nazelle
-- Evi Dons
-- Mailin Gaupp-Berghausen
-- Regine Gerike 
-- Luc Int Panis
-- Sonja Kahlmeier
-- Mark Nieuwenhuijsen
-- David Rojas-Rueda
 - Meghan Winters
-date: "2020-06-01"
-doi: "10.1016/j.aap.2020.105540"
+- admin
+- Suzanne Therrien
+- Daniel Fuller
+- Lise Gauvin
+- David GT Whitehurst
+- Trisalyn Nelson
+
+date: "2018-01-18"
+doi: "10.1136/bmjopen-2017-019130"
 featured: true
 image:
-  caption: 'Image credit: [**Photo by Clem Onojeghu on Unsplash**](https://unsplash.com/photos/8H5uWWZ8-3I)'
+  caption: ""
   focal_point: ""
   preview_only: true
 projects: []
-publication: '*Accident Analysis & Prevention, 141* (105540)'
+publication: '*BMJ Open, 8* (e019130)'
 publication_short: ""
 publication_types:
 - "2"
-publishDate: "2020-06"
-summary: Data from 7 European cities show higher crash risks for less frequent cyclists, men, those who perceive cycling to not be well regarded in their neighbourhood, and those who live in areas of very high building density.
+publishDate: "2018-01-18"
+summary: Study protocol for assessing impacts of bicycling infrastructure on mid-sized cities.
 tags:
 - Active Transportation
-- Cohort
-title: Cyclist crash rates and risk factors in a prospective cohort in seven European cities
+- Natural Experiment
+title: "Impacts of Bicycling Infrastructure in Mid-Sized Cities (IBIMS): Protocol for a Natural Experiment Study"
 ---
 
 {{% alert note %}}
