@@ -21,7 +21,7 @@ publication_short: ""
 publication_types:
 - "2"
 publishDate: "2019-05-01"
-summary: We found bicyclists with greater spatial access to bicycling specific infrastructure had a higher likelihood of perceiving bicycling to be safe
+summary: We found bicyclists with greater spatial access to bicycling specific infrastructure had a higher likelihood of perceiving bicycling to be safe.
 tags:
 - Active Transportation
 - Bike score
