@@ -1,9 +1,9 @@
 {
-    "path" : "D:/GitHub/website-mbc",
-    "sortOrder" : [
+    "path": "D:/GitHub/website-mbc",
+    "sortOrder": [
         {
-            "ascending" : true,
-            "columnIndex" : 2
+            "ascending": true,
+            "columnIndex": 2
         }
     ]
 }
