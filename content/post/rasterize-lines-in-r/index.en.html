@@ -50,10 +50,7 @@ projects: []
 <li>Output raster where each grid cell has the value of the length of the polylines within the specified buffer length of the cell centroid</li>
 </ol>
 <p>The function is defined below:</p>
-<pre class="r"><code>#Function that takes an input study area polygon, input polyline data and creates a &quot;rasterized&quot; version of the data
-#1. 
-
-rasterize_lines &lt;- function(input_study_area,input_linestring,cell_size=100,buffer_width=300,mask=F){
+<pre class="r"><code>rasterize_lines &lt;- function(input_study_area,input_linestring,cell_size=100,buffer_width=300,mask=F){
   require(sf)
   require(raster)
   require(tidyverse)
