@@ -22,15 +22,22 @@ projects: []
 
 
 
-<p>As a part of a University level GIS course I taught I needed to generate some raster data for a lab exercise on map algebra. I wrote a script to “rasterize” some vector data I already had on hand. This type of surface is common for the development of land use regression models, which require all input data to be continuous surfaces. For example, when developing a predictive surface for No2 concentrations, arterial road density within a given buffer length is likely an important predictor. Raster surfaces are created where every grid cell represents the line density of arterial roads within a given buffer size for the centroid of that grid cell. Here I develop a function to automate the process of creating such a surface in R using the sf package.</p>
-<p>The function <code>rasterize_lines</code> has 4 inputs:</p>
-<ol style="list-style-type: decimal">
-<li>input_study_area: <code>sf</code> polygon or multipolygon</li>
-<li>input_linestring: <code>sf</code> linestring or multilinestring</li>
-<li>cell_size: Spatial resolution of the output raster</li>
-<li>buffer_width: Buffer length from which to calculate line densities from each raster cell centroid.</li>
-<li>mask: If TRUE then the output raster is clipped by the study area boundary. If FALSE then the output raster extent is equal to bounding box of study area boundary</li>
-</ol>
+<p>As a part of a University level GIS course I taught I needed to generate some raster data for a lab exercise on map algebra. I wrote a function to “rasterize” polyline data I had on hand, that is, to convert the discrete polyline data to a continuous density surface. This type of operation used in things like land use regression models or in metrics of walkability or bikeability, which require all input data to be continuous surfaces. Here I develop a function to automate the process of creating such a surface in R using <code>sf</code>,<code>raster</code> and <code>tidyverse</code> packages.</p>
+<p><code>rasterize_lines(input_study_area,input_linestring,cell_size=100,buffer_width=300,mask=F)</code></p>
+<div id="arguments" class="section level1">
+<h1>Arguments</h1>
+<p><em>input_study_area</em> <code>sf</code> polygon or multipolygon
+<em>input_linestring</em> <code>sf</code> linestring or multilinestring
+<em>cell_size</em> Desired spatial resolution of the output raster (i.e. in metres)
+<em>buffer_width</em> Buffer length from which to calculate line densities from each raster cell centroid.
+<em>mask</em> If <code>TRUE</code> then the output raster is clipped by the study area boundary. If <code>FALSE</code> then the output raster extent is equal to bounding box of study area boundary</p>
+</div>
+<div id="value" class="section level1">
+<h1>Value</h1>
+<p>An <code>RasterLayer</code> file</p>
+</div>
+<div id="explanation" class="section level1">
+<h1>Explanation</h1>
 <p>The function <code>rasterize_lines</code> takes the following steps to rasterize the polylines:</p>
 <ol style="list-style-type: decimal">
 <li>Create empty raster surface of specified grid cell size and study area extent</li>
@@ -142,6 +149,7 @@ rasterize_lines &lt;- function(input_study_area,input_linestring,cell_size=100,b
     return(output_rast)
   
 }</code></pre>
+</div>
 <div id="example" class="section level1">
 <h1>Example</h1>
 <p>I want to map the density of seperated bikelanes in Vancouver, BC as a continuous raster surface. I have two <code>sf</code> objects:</p>
@@ -160,9 +168,8 @@ rasterize_lines &lt;- function(input_study_area,input_linestring,cell_size=100,b
 ## 1 116255573 [m^2] POLYGON ((491475.3 5450127,...</code></pre>
 <pre class="r"><code>ggplot(vancouver_boundary) +
   geom_sf() + 
-  ggtitle(&quot;Input Study Area Polygon (City of Vancouver)&quot;) + 
   theme_bw()</code></pre>
-<p><img src="/post/2020-10-21-rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p><img src="/post/rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 <p>Lets take a look at the separated bikelane data:</p>
 <pre class="r"><code>seperated_bl %&gt;% structure()</code></pre>
 <pre><code>## Simple feature collection with 193 features and 9 fields
@@ -195,17 +202,14 @@ rasterize_lines &lt;- function(input_study_area,input_linestring,cell_size=100,b
 ## 10    143       2009        NS    Arterial MULTILINESTRING ((496922.1 ...</code></pre>
 <pre class="r"><code>ggplot(seperated_bl) +
   geom_sf() + 
-  ggtitle(&quot;Input Polylines to Rasterize\n(Seperated Bikelanes)&quot;) + 
-  xlab(&quot;Longitude&quot;) + 
-  ylab(&quot;Latitude&quot;) +
   theme_bw()</code></pre>
-<p><img src="/post/2020-10-21-rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p><img src="/post/rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
 <p>Note that both <code>sf</code> objects have the same coordinate reference system (CRS). This function needs each <code>sf</code> object to be in the same <em>projected</em> coordinate system.</p>
 <p>Now I input the parameters into the <code>rasterize_lines()</code> function. I chose a 100m by 100m cell size, and want to calculate the density of separated bikelanes within 300m of the centroid of each cell (500m buffer):</p>
 <pre class="r"><code>sepbls_rast &lt;- rasterize_lines(input_study_area = vancouver_boundary,
                                           input_linestring = seperated_bl,
                                           cell_size = 100,
-                                          buffer_width = 500,
+                                          buffer_width = 200,
                                           mask=TRUE)</code></pre>
 <pre><code>## [1] &quot;Generating grid...&quot;
 ## [1] &quot;Buffering grid cell centroids....&quot;
@@ -233,11 +237,9 @@ rasterize_lines &lt;- function(input_study_area,input_linestring,cell_size=100,b
 ## [1] &quot;100 % of lines split&quot;
 ## [1] &quot;Calculating lengths of split polylines...&quot;
 ## [1] &quot;Spatially aggregating road lengths by each cell centroid buffer&quot;</code></pre>
-<div id="output" class="section level2">
-<h2>Output</h2>
-<pre class="r"><code>sepbls_rast_df &lt;- as.data.frame(sepbls_rast, xy = TRUE)#covert raster file to dataframe to enable mapping in GGplot
-
-ggplot() +
+<p>Once the function runs the output is a <code>RasterLayer</code> file. We can enable mapping in ggplot by converting it to a data.frame:</p>
+<pre class="r"><code>sepbls_rast_df &lt;- as.data.frame(sepbls_rast, xy = TRUE)#covert raster file to dataframe to enable mapping in ggplot</code></pre>
+<pre class="r"><code>ggplot() +
   geom_raster(data = sepbls_rast_df,aes(x=x,y=y,fill=layer)) + 
   scale_fill_viridis_c(name = &quot;Separated\nBike Lane\nDensity&quot;) +
   xlab(&quot;Longitude&quot;) + 
@@ -246,6 +248,5 @@ ggplot() +
   theme_map() +
   theme(legend.position=&quot;bottom&quot;) +
   theme(legend.key.width=unit(2, &quot;cm&quot;))</code></pre>
-<p><img src="/post/2020-10-21-rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
-</div>
+<p><img src="/post/rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
 </div>

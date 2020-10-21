@@ -26,29 +26,34 @@ library(raster)
 library(tidyverse)
 library(ggthemes)
 
-
 #Load Vector Data
 
-vancouver_boundary <- st_read("D:/GitHub/website-mbc/content/post/2020-10-21-rasterize-lines-in-r",layer = "VanCT") %>% # census tract polygon
+vancouver_boundary <- st_read("D:/GitHub/website-mbc/content/post/rasterize-lines-in-r",layer = "VanCT") %>% # census tract polygon
   mutate(area = st_area(.))%>%
   summarise(area = sum(area))  
   
-seperated_bl <- st_read("D:/GitHub/website-mbc/content/post/2020-10-21-rasterize-lines-in-r",
+seperated_bl <- st_read("D:/GitHub/website-mbc/content/post/rasterize-lines-in-r",
                    layer = "sep_bls")#separated bike lane polylines
-
 
 ```
 
-As a part of a University level GIS course I taught I needed to generate some raster data for a lab exercise on map algebra. I wrote a script to "rasterize" some vector data I already had on hand. This type of surface is common for the development of land use regression models, which require all input data to be continuous surfaces. For example, when developing a predictive surface for No2 concentrations, arterial road density within a given buffer length is likely an important predictor. Raster surfaces are created where every grid cell represents the line density of arterial roads within a given buffer size for the centroid of that grid cell. Here I develop a function to automate the process of creating such a surface in R using the sf package. 
+As a part of a University level GIS course I taught I needed to generate some raster data for a lab exercise on map algebra. I wrote a function to "rasterize" polyline data I had on hand, that is, to convert the discrete polyline data to a continuous density surface. This type of operation used in things like land use regression models or in metrics of walkability or bikeability, which require all input data to be continuous surfaces. Here I develop a function to automate the process of creating such a surface in R using `sf`,`raster` and `tidyverse` packages. 
 
-The function `rasterize_lines` has 4 inputs:
+`rasterize_lines(input_study_area,input_linestring,cell_size=100,buffer_width=300,mask=F)`
 
-1. input_study_area: `sf` polygon or multipolygon
-2. input_linestring: `sf` linestring or multilinestring
-3. cell_size: Spatial resolution of the output raster
-4. buffer_width: Buffer length from which to calculate line densities from each raster cell centroid. 
-5. mask: If TRUE then the output raster is clipped by the study area boundary. If FALSE then the output raster extent is equal to bounding box of study area boundary
+# Arguments
 
+  *input_study_area* `sf` polygon or multipolygon
+  *input_linestring* `sf` linestring or multilinestring
+  *cell_size* Desired spatial resolution of the output raster (i.e. in metres)
+  *buffer_width* Buffer length from which to calculate line densities from each raster cell centroid. 
+  *mask* If `TRUE` then the output raster is clipped by the study area boundary. If `FALSE` then the output raster extent is equal to bounding box of study area boundary
+
+# Value 
+
+An `RasterLayer` file  
+
+# Explanation
 
 The function `rasterize_lines` takes the following steps to rasterize the polylines: 
 
@@ -181,10 +186,8 @@ Lets take at the boundary data:
 
 vancouver_boundary %>% structure()
 
-
 ggplot(vancouver_boundary) +
   geom_sf() + 
-  ggtitle("Input Study Area Polygon (City of Vancouver)") + 
   theme_bw()
 ```
 
@@ -196,11 +199,7 @@ seperated_bl %>% structure()
 
 ggplot(seperated_bl) +
   geom_sf() + 
-  ggtitle("Input Polylines to Rasterize\n(Seperated Bikelanes)") + 
-  xlab("Longitude") + 
-  ylab("Latitude") +
   theme_bw()
-
 
 ```
 
@@ -214,19 +213,21 @@ Now I input the parameters into the `rasterize_lines()` function. I chose a 100m
 sepbls_rast <- rasterize_lines(input_study_area = vancouver_boundary,
                                           input_linestring = seperated_bl,
                                           cell_size = 100,
-                                          buffer_width = 500,
+                                          buffer_width = 200,
                                           mask=TRUE)
 
 
 ```
 
 
-## Output
+Once the function runs the output is a `RasterLayer` file. We can enable mapping in ggplot by converting it to a data.frame:  
 
 
 ```{r}
-sepbls_rast_df <- as.data.frame(sepbls_rast, xy = TRUE)#covert raster file to dataframe to enable mapping in GGplot
+sepbls_rast_df <- as.data.frame(sepbls_rast, xy = TRUE)#covert raster file to dataframe to enable mapping in ggplot
+```
 
+```{r}
 ggplot() +
   geom_raster(data = sepbls_rast_df,aes(x=x,y=y,fill=layer)) + 
   scale_fill_viridis_c(name = "Separated\nBike Lane\nDensity") +
@@ -239,5 +240,5 @@ ggplot() +
 ```
 
 ```{r,include=FALSE}
-ggsave(filename = "featured.jpeg",path="D:/GitHub/website-mbc/content/post/2020-10-21-rasterize-lines-in-r",units = "in",height = 5,width = 5,dpi = 250,device = "jpeg")
+ggsave(filename = "featured.jpeg",path="D:/GitHub/website-mbc/content/post/rasterize-lines-in-r",units = "in",height = 5,width = 5,dpi = 250,device = "jpeg")
 ```
