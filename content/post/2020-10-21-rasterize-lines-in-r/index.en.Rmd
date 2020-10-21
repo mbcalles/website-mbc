@@ -6,6 +6,7 @@ slug: []
 categories:
   - R
   - sf
+  - raster
 tags: []
 subtitle: ''
 summary: ''
@@ -14,41 +15,42 @@ lastmod: '2020-10-21T12:39:56-07:00'
 featured: no
 image:
   caption: ''
-  focal_point: ''
+  focal_point: 'top'
   preview_only: no
 projects: []
 ---
 
 ```{r setup, include=FALSE}
-source("D:/GitHub/website-mbc/content/post/rasterize-lines/set-up.R")#load script with required packages
+library(sf)
+library(raster)
+library(tidyverse)
+library(ggthemes)
+
 
 #Load Vector Data
 
-vancouver_boundary <- st_read("D:/GitHub/website-mbc/content/post/rasterize-lines/input_data",
-                 layer = "VanCT") %>% # census tract polygon
+vancouver_boundary <- st_read("D:/GitHub/website-mbc/content/post/2020-10-21-rasterize-lines-in-r",layer = "VanCT") %>% # census tract polygon
   mutate(area = st_area(.))%>%
   summarise(area = sum(area))  
   
-seperated_bl <- st_read("D:/GitHub/website-mbc/content/post/rasterize-lines/input_data",
+seperated_bl <- st_read("D:/GitHub/website-mbc/content/post/2020-10-21-rasterize-lines-in-r",
                    layer = "sep_bls")#separated bike lane polylines
 
 
 ```
 
-# Rasterize line vector data
-
 As a part of a University level GIS course I taught I needed to generate some raster data for a lab exercise on map algebra. I wrote a script to "rasterize" some vector data I already had on hand. This type of surface is common for the development of land use regression models, which require all input data to be continuous surfaces. For example, when developing a predictive surface for No2 concentrations, arterial road density within a given buffer length is likely an important predictor. Raster surfaces are created where every grid cell represents the line density of arterial roads within a given buffer size for the centroid of that grid cell. Here I develop a function to automate the process of creating such a surface in R using the sf package. 
 
-The function "rasterize_lines" has 4 inputs:
+The function `rasterize_lines` has 4 inputs:
 
-1. inputStudyArea: A polygon representing the extent of the study area
-2. inputLines: Polylines to be rasterized
-3. cellSize: Spatial resolution of the output raster
-4. buffWidth: Buffer length from which to calculate line densities from each raster cell centroid. 
+1. input_study_area: `sf` polygon or multipolygon
+2. input_linestring: `sf` linestring or multilinestring
+3. cell_size: Spatial resolution of the output raster
+4. buffer_width: Buffer length from which to calculate line densities from each raster cell centroid. 
 5. mask: If TRUE then the output raster is clipped by the study area boundary. If FALSE then the output raster extent is equal to bounding box of study area boundary
 
 
-The function "rasterize_lines" takes the following steps to rasterize the polylines: 
+The function `rasterize_lines` takes the following steps to rasterize the polylines: 
 
 1. Create empty raster surface of specified grid cell size and study area extent
 2. Generate buffers of specified length from the centroid of the empty raster surface
@@ -57,39 +59,41 @@ The function "rasterize_lines" takes the following steps to rasterize the polyli
 5. Assign the length within each buffer to the associated raster
 6. Output raster where each grid cell has the value of the length of the polylines within the specified buffer length of the cell centroid
 
+The function is defined below:
+
 ```{r}
 #Function that takes an input study area polygon, input polyline data and creates a "rasterized" version of the data
 #1. 
 
-rasterize_lines <- function(inputStudyArea,inputLines,cellSize=100,buffWidth=300,mask=F){
+rasterize_lines <- function(input_study_area,input_linestring,cell_size=100,buffer_width=300,mask=F){
   require(sf)
   require(raster)
   require(tidyverse)
   
-  if(st_crs(inputStudyArea)$proj4string==st_crs(inputLines)$proj4string){ #check that both study area and polyline files are in the same coordinate system and projection
+  if(st_crs(input_study_area)$proj4string==st_crs(input_linestring)$proj4string){ #check that both study area and polyline files are in the same coordinate system and projection
     
     
     print("Generating grid...")
     #Create template raster from Study Area extent (empty raster with the extent of the study area, and cell size as indicated)
-    raster_template <- raster(extent(inputStudyArea), resolution = cellSize,
-                              crs = st_crs(inputStudyArea)$proj4string)
+    raster_template <- raster(extent(input_study_area), resolution = cell_size,
+                              crs = st_crs(input_study_area)$proj4string)
     print("Buffering grid cell centroids....")
 
     rast_point <- rasterToPoints(raster_template, spatial = TRUE) %>% 
       st_as_sf() #create point layer from template raster based on the centroid 
     
-    rast_point_buff <- st_buffer(rast_point,dist=buffWidth)#create buffers from raster cell centroids of specified width
+    rast_point_buff <- st_buffer(rast_point,dist=buffer_width)#create buffers from raster cell centroids of specified width
 
     
     print("Finding intersections between grid cell centroid buffers and input lines...")
     
-    #find intersection points between buffer boundaries and inputLines (e.g. isolate buffers that actually intersect with polyline data)
+    #find intersection points between buffer boundaries and input_linestring (e.g. isolate buffers that actually intersect with polyline data)
     rast_point_buff_ls <- st_cast(rast_point_buff,"LINESTRING")
     
-    inputLines <- st_geometry(inputLines) %>%
+    input_linestring <- st_geometry(input_linestring) %>%
       st_transform(crs = st_crs(rast_point_buff_ls)$proj4string)#reduce size of dataset and ensure proj4strings are the same
     
-    int_points <- st_intersection(rast_point_buff_ls,inputLines) %>% #find intersection of road lines and centroid buffers
+    int_points <- st_intersection(rast_point_buff_ls,input_linestring) %>% #find intersection of road lines and centroid buffers
       st_cast("MULTIPOINT") %>%
       st_cast("POINT")
     
@@ -104,7 +108,7 @@ rasterize_lines <- function(inputStudyArea,inputLines,cellSize=100,buffWidth=300
     #iterate through each grid cell and intersect roads with grid cell, split the line geometry within that cell by the intersection buffers
     for (i in 1:length(grid)) {
       temp <- st_intersection(int_points_buff, grid[i])
-      inputLines <- st_difference(inputLines, temp)
+      input_linestring <- st_difference(input_linestring, temp)
       
       if (i %in% round(printPercent)) {
         print(paste(round(i / length(grid) * 100, 0),
@@ -114,12 +118,12 @@ rasterize_lines <- function(inputStudyArea,inputLines,cellSize=100,buffWidth=300
     
     print("Calculating lengths of split polylines...")
     
-    inputLines_ls <- inputLines %>%
+    input_linestring_ls <- input_linestring %>%
       st_cast("MULTILINESTRING") %>%
       st_cast("LINESTRING")#convert to linestring to isolate non-contiguous lines
     
-    inputLines_ls <-
-      st_sf(data.frame(length_m = st_length(inputLines_ls)), geometry = inputLines_ls) #calculate each line segment length
+    input_linestring_ls <-
+      st_sf(data.frame(length_m = st_length(input_linestring_ls)), geometry = input_linestring_ls) #calculate each line segment length
     
     print("Spatially aggregating road lengths by each cell centroid buffer")
     
@@ -129,7 +133,7 @@ rasterize_lines <- function(inputStudyArea,inputLines,cellSize=100,buffWidth=300
                        geometry = rast_point_buff)) #create sf object with the geometry of the point buffer
     
     rast_point_buff <- rast_point_buff %>%
-      st_join(inputLines_ls) %>% #join lines split by buffer geometry and associated lengths to the buffer it falls within (e.g. points buffer is the target layer, input lines are join layer)
+      st_join(input_linestring_ls) %>% #join lines split by buffer geometry and associated lengths to the buffer it falls within (e.g. points buffer is the target layer, input lines are join layer)
       group_by(ID) %>%
       summarize(line_length = sum(length_m),`.groups`="drop_last") %>%
       mutate(line_length = replace_na(line_length, 0)) %>% 
@@ -144,7 +148,7 @@ rasterize_lines <- function(inputStudyArea,inputLines,cellSize=100,buffWidth=300
     
     if(mask==TRUE){
       
-      output_rast <- mask(output_rast, as(inputStudyArea, "Spatial"))
+      output_rast <- mask(output_rast, as(input_study_area, "Spatial"))
       
       
     }
@@ -165,18 +169,30 @@ rasterize_lines <- function(inputStudyArea,inputLines,cellSize=100,buffWidth=300
 
 # Example
 
-Here we have a map of the City of Vancouver's separated bike lanes as input data:
+I want to map the density of seperated bikelanes in Vancouver, BC as a continuous raster surface. I have two `sf` objects: 
 
-## Inputs
+  1. `vancouver_boundary`
+  2. `seperated_bl`
 
 
-```{r,echo=FALSE}
+Lets take at the boundary data:
+
+```{r}
+
+vancouver_boundary %>% structure()
+
+
 ggplot(vancouver_boundary) +
   geom_sf() + 
   ggtitle("Input Study Area Polygon (City of Vancouver)") + 
-  xlab("Longitude") + 
-  ylab("Latitude") +
   theme_bw()
+```
+
+Lets take a look at the separated bikelane data:
+
+```{r}
+
+seperated_bl %>% structure()
 
 ggplot(seperated_bl) +
   geom_sf() + 
@@ -188,15 +204,17 @@ ggplot(seperated_bl) +
 
 ```
 
-## Function
+Note that both `sf` objects have the same coordinate reference system (CRS). This function needs each `sf` object to be in the same _projected_ coordinate system.  
+
+Now I input the parameters into the `rasterize_lines()` function. I chose a 100m by 100m cell size, and want to calculate the density of separated bikelanes within 300m of the centroid of each cell (500m buffer):
 
 
 ```{r}
 
-sepbls_rast <- rasterize_lines(inputStudyArea = vancouver_boundary,
-                                          inputLines = seperated_bl,
-                                          cellSize = 100,
-                                          buffWidth = 300,
+sepbls_rast <- rasterize_lines(input_study_area = vancouver_boundary,
+                                          input_linestring = seperated_bl,
+                                          cell_size = 100,
+                                          buffer_width = 500,
                                           mask=TRUE)
 
 
@@ -211,8 +229,7 @@ sepbls_rast_df <- as.data.frame(sepbls_rast, xy = TRUE)#covert raster file to da
 
 ggplot() +
   geom_raster(data = sepbls_rast_df,aes(x=x,y=y,fill=layer)) + 
-  scale_fill_viridis_c(name = "Metres of\nBikelanes\nwithin 300m") +
-  ggtitle("City of Vancouver: Rasterized Separated Bikelanes") + 
+  scale_fill_viridis_c(name = "Separated\nBike Lane\nDensity") +
   xlab("Longitude") + 
   ylab("Latitude") +
   coord_equal() + 

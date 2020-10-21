@@ -26,10 +26,10 @@ projects: []
 <p>As a part of a University level GIS course I taught I needed to generate some raster data for a lab exercise on map algebra. I wrote a script to “rasterize” some vector data I already had on hand. This type of surface is common for the development of land use regression models, which require all input data to be continuous surfaces. For example, when developing a predictive surface for No2 concentrations, arterial road density within a given buffer length is likely an important predictor. Raster surfaces are created where every grid cell represents the line density of arterial roads within a given buffer size for the centroid of that grid cell. Here I develop a function to automate the process of creating such a surface in R using the sf package.</p>
 <p>The function “rasterize_lines” has 4 inputs:</p>
 <ol style="list-style-type: decimal">
-<li>inputStudyArea: A polygon representing the extent of the study area</li>
-<li>inputLines: Polylines to be rasterized</li>
-<li>cellSize: Spatial resolution of the output raster</li>
-<li>buffWidth: Buffer length from which to calculate line densities from each raster cell centroid.</li>
+<li>input_study_area: <code>sf</code> polygon or multipolygon</li>
+<li>input_linestring: <code>sf</code> linestring or multilinestring</li>
+<li>cell_size: Spatial resolution of the output raster</li>
+<li>buffer_width: Buffer length from which to calculate line densities from each raster cell centroid.</li>
 <li>mask: If TRUE then the output raster is clipped by the study area boundary. If FALSE then the output raster extent is equal to bounding box of study area boundary</li>
 </ol>
 <p>The function “rasterize_lines” takes the following steps to rasterize the polylines:</p>
@@ -44,35 +44,35 @@ projects: []
 <pre class="r"><code>#Function that takes an input study area polygon, input polyline data and creates a &quot;rasterized&quot; version of the data
 #1. 
 
-rasterize_lines &lt;- function(inputStudyArea,inputLines,cellSize=100,buffWidth=300,mask=F){
+rasterize_lines &lt;- function(input_study_area,input_linestring,cell_size=100,buffer_width=300,mask=F){
   require(sf)
   require(raster)
   require(tidyverse)
   
-  if(st_crs(inputStudyArea)$proj4string==st_crs(inputLines)$proj4string){ #check that both study area and polyline files are in the same coordinate system and projection
+  if(st_crs(input_study_area)$proj4string==st_crs(input_linestring)$proj4string){ #check that both study area and polyline files are in the same coordinate system and projection
     
     
     print(&quot;Generating grid...&quot;)
     #Create template raster from Study Area extent (empty raster with the extent of the study area, and cell size as indicated)
-    raster_template &lt;- raster(extent(inputStudyArea), resolution = cellSize,
-                              crs = st_crs(inputStudyArea)$proj4string)
+    raster_template &lt;- raster(extent(input_study_area), resolution = cell_size,
+                              crs = st_crs(input_study_area)$proj4string)
     print(&quot;Buffering grid cell centroids....&quot;)
 
     rast_point &lt;- rasterToPoints(raster_template, spatial = TRUE) %&gt;% 
       st_as_sf() #create point layer from template raster based on the centroid 
     
-    rast_point_buff &lt;- st_buffer(rast_point,dist=buffWidth)#create buffers from raster cell centroids of specified width
+    rast_point_buff &lt;- st_buffer(rast_point,dist=buffer_width)#create buffers from raster cell centroids of specified width
 
     
     print(&quot;Finding intersections between grid cell centroid buffers and input lines...&quot;)
     
-    #find intersection points between buffer boundaries and inputLines (e.g. isolate buffers that actually intersect with polyline data)
+    #find intersection points between buffer boundaries and input_linestring (e.g. isolate buffers that actually intersect with polyline data)
     rast_point_buff_ls &lt;- st_cast(rast_point_buff,&quot;LINESTRING&quot;)
     
-    inputLines &lt;- st_geometry(inputLines) %&gt;%
+    input_linestring &lt;- st_geometry(input_linestring) %&gt;%
       st_transform(crs = st_crs(rast_point_buff_ls)$proj4string)#reduce size of dataset and ensure proj4strings are the same
     
-    int_points &lt;- st_intersection(rast_point_buff_ls,inputLines) %&gt;% #find intersection of road lines and centroid buffers
+    int_points &lt;- st_intersection(rast_point_buff_ls,input_linestring) %&gt;% #find intersection of road lines and centroid buffers
       st_cast(&quot;MULTIPOINT&quot;) %&gt;%
       st_cast(&quot;POINT&quot;)
     
@@ -87,7 +87,7 @@ rasterize_lines &lt;- function(inputStudyArea,inputLines,cellSize=100,buffWidth=
     #iterate through each grid cell and intersect roads with grid cell, split the line geometry within that cell by the intersection buffers
     for (i in 1:length(grid)) {
       temp &lt;- st_intersection(int_points_buff, grid[i])
-      inputLines &lt;- st_difference(inputLines, temp)
+      input_linestring &lt;- st_difference(input_linestring, temp)
       
       if (i %in% round(printPercent)) {
         print(paste(round(i / length(grid) * 100, 0),
@@ -97,12 +97,12 @@ rasterize_lines &lt;- function(inputStudyArea,inputLines,cellSize=100,buffWidth=
     
     print(&quot;Calculating lengths of split polylines...&quot;)
     
-    inputLines_ls &lt;- inputLines %&gt;%
+    input_linestring_ls &lt;- input_linestring %&gt;%
       st_cast(&quot;MULTILINESTRING&quot;) %&gt;%
       st_cast(&quot;LINESTRING&quot;)#convert to linestring to isolate non-contiguous lines
     
-    inputLines_ls &lt;-
-      st_sf(data.frame(length_m = st_length(inputLines_ls)), geometry = inputLines_ls) #calculate each line segment length
+    input_linestring_ls &lt;-
+      st_sf(data.frame(length_m = st_length(input_linestring_ls)), geometry = input_linestring_ls) #calculate each line segment length
     
     print(&quot;Spatially aggregating road lengths by each cell centroid buffer&quot;)
     
@@ -112,7 +112,7 @@ rasterize_lines &lt;- function(inputStudyArea,inputLines,cellSize=100,buffWidth=
                        geometry = rast_point_buff)) #create sf object with the geometry of the point buffer
     
     rast_point_buff &lt;- rast_point_buff %&gt;%
-      st_join(inputLines_ls) %&gt;% #join lines split by buffer geometry and associated lengths to the buffer it falls within (e.g. points buffer is the target layer, input lines are join layer)
+      st_join(input_linestring_ls) %&gt;% #join lines split by buffer geometry and associated lengths to the buffer it falls within (e.g. points buffer is the target layer, input lines are join layer)
       group_by(ID) %&gt;%
       summarize(line_length = sum(length_m),`.groups`=&quot;drop_last&quot;) %&gt;%
       mutate(line_length = replace_na(line_length, 0)) %&gt;% 
@@ -127,7 +127,7 @@ rasterize_lines &lt;- function(inputStudyArea,inputLines,cellSize=100,buffWidth=
     
     if(mask==TRUE){
       
-      output_rast &lt;- mask(output_rast, as(inputStudyArea, &quot;Spatial&quot;))
+      output_rast &lt;- mask(output_rast, as(input_study_area, &quot;Spatial&quot;))
       
       
     }
@@ -145,17 +145,69 @@ rasterize_lines &lt;- function(inputStudyArea,inputLines,cellSize=100,buffWidth=
 </div>
 <div id="example" class="section level1">
 <h1>Example</h1>
-<p>Here we have a map of the City of Vancouver’s separated bike lanes as input data:</p>
-<div id="inputs" class="section level2">
-<h2>Inputs</h2>
-<p><img src="/post/2020-10-21-rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-2-1.png" width="672" /><img src="/post/2020-10-21-rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-2-2.png" width="672" /></p>
-</div>
+<p>I want to map the density of seperated bikelanes in Vancouver, BC as a continuous raster surface. I have two <code>sf</code> objects:</p>
+<ol style="list-style-type: decimal">
+<li><code>vancouver_boundary</code></li>
+<li><code>seperated_bl</code></li>
+</ol>
+<p>Lets take at the boundary data:</p>
+<pre class="r"><code>vancouver_boundary %&gt;% structure()</code></pre>
+<pre><code>## Simple feature collection with 1 feature and 1 field
+## geometry type:  POLYGON
+## dimension:      XY
+## bbox:           xmin: 483690.9 ymin: 5449535 xmax: 498329.2 ymax: 5462381
+## projected CRS:  NAD83 / UTM zone 10N
+##              area                       geometry
+## 1 116255573 [m^2] POLYGON ((491475.3 5450127,...</code></pre>
+<pre class="r"><code>ggplot(vancouver_boundary) +
+  geom_sf() + 
+  ggtitle(&quot;Input Study Area Polygon (City of Vancouver)&quot;) + 
+  theme_bw()</code></pre>
+<p><img src="/post/2020-10-21-rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>Lets take a look at the seperated bikelane data:</p>
+<pre class="r"><code>seperated_bl %&gt;% structure()</code></pre>
+<pre><code>## Simple feature collection with 193 features and 9 fields
+## geometry type:  MULTILINESTRING
+## dimension:      XY
+## bbox:           xmin: 483723.4 ymin: 5449450 xmax: 498302.6 ymax: 5462403
+## projected CRS:  NAD83 / UTM zone 10N
+## First 10 features:
+##    UNIQUE_ID        ROUTE_NAM            STREET_NAM             TPL_TYPE STATUS
+## 1          1     Burrard Brdg        Burrard Bridge Protected Bike Lanes Active
+## 2          5   Seaside Bypass             W 2nd Ave Protected Bike Lanes Active
+## 3          7 Knight St Bridge      Knight St Bridge Protected Bike Lanes Active
+## 4          9  Laurel Overpass       Laurel Overpass Protected Bike Lanes Active
+## 5         14   South Terminal       L/S of Terminal Protected Bike Lanes Active
+## 6         19   Central Velley             E 1st Ave Protected Bike Lanes Active
+## 7         20 Knigth St Bridge On Ramp Knight Bridge Protected Bike Lanes Active
+## 8         24         Cornwall              Cornwall Protected Bike Lanes Active
+## 9         27          Pacific            Pacific St Protected Bike Lanes Active
+## 10        28          Kerr St               Kerr St Protected Bike Lanes Active
+##    LENGTH YEAR_CONST DIRECTION  STREET_TYP                       geometry
+## 1    1059       1990        NS    Arterial MULTILINESTRING ((490372 54...
+## 2     146       2009        NS    Arterial MULTILINESTRING ((491661.8 ...
+## 3     741       1990        NS    Arterial MULTILINESTRING ((494374.9 ...
+## 4     177          0        NS Residential MULTILINESTRING ((490971.9 ...
+## 5    1061       2003        EW        Lane MULTILINESTRING ((492866.9 ...
+## 6     148          0        EW Residential MULTILINESTRING ((492538.4 ...
+## 7     184       2003        NS    Arterial MULTILINESTRING ((494251.7 ...
+## 8     182       1990        NS    Arterial MULTILINESTRING ((489421.9 ...
+## 9     311       2016        EW    Arterial MULTILINESTRING ((490225.5 ...
+## 10    143       2009        NS    Arterial MULTILINESTRING ((496922.1 ...</code></pre>
+<pre class="r"><code>ggplot(seperated_bl) +
+  geom_sf() + 
+  ggtitle(&quot;Input Polylines to Rasterize\n(Seperated Bikelanes)&quot;) + 
+  xlab(&quot;Longitude&quot;) + 
+  ylab(&quot;Latitude&quot;) +
+  theme_bw()</code></pre>
+<p><img src="/post/2020-10-21-rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>Both of these inputs are <code>sf</code> objects.</p>
 <div id="function" class="section level2">
 <h2>Function</h2>
-<pre class="r"><code>sepbls_rast &lt;- rasterize_lines(inputStudyArea = vancouver_boundary,
-                                          inputLines = seperated_bl,
-                                          cellSize = 100,
-                                          buffWidth = 300,
+<pre class="r"><code>sepbls_rast &lt;- rasterize_lines(input_study_area = vancouver_boundary,
+                                          input_linestring = seperated_bl,
+                                          cell_size = 100,
+                                          buffer_width = 300,
                                           mask=TRUE)</code></pre>
 <pre><code>## [1] &quot;Generating grid...&quot;
 ## [1] &quot;Buffering grid cell centroids....&quot;
@@ -198,6 +250,6 @@ ggplot() +
   theme_map() +
   theme(legend.position=&quot;bottom&quot;) +
   theme(legend.key.width=unit(2, &quot;cm&quot;))</code></pre>
-<p><img src="/post/2020-10-21-rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p><img src="/post/2020-10-21-rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
 </div>
 </div>
