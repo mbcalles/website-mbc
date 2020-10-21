@@ -22,15 +22,17 @@ projects: []
 
 
 
-<p>As a part of a University level GIS course I taught I needed to generate some raster data for a lab exercise on map algebra. I wrote a function to “rasterize” polyline data I had on hand, that is, to convert the discrete polyline data to a continuous density surface. This type of operation used in things like land use regression models or in metrics of walkability or bikeability, which require all input data to be continuous surfaces. Here I develop a function to automate the process of creating such a surface in R using <code>sf</code>,<code>raster</code> and <code>tidyverse</code> packages.</p>
+<p>As a part of a University level GIS course I taught I needed to generate some raster data for a lab exercise on map algebra. I wrote a function to “rasterize” polyline data I had on hand, that is, to convert the discrete polyline data to a continuous density surface. This type of operation used in things like land use regression models or in metrics of walkability or bikeability, which require all input data to be continuous surfaces. Here I develop a function to automate the process of creating such a surface in R using <code>sf</code>, <code>raster</code> and <code>tidyverse</code> packages.</p>
 <p><code>rasterize_lines(input_study_area,input_linestring,cell_size=100,buffer_width=300,mask=F)</code></p>
 <div id="arguments" class="section level1">
 <h1>Arguments</h1>
-<p><em>input_study_area</em> <code>sf</code> polygon or multipolygon
-<em>input_linestring</em> <code>sf</code> linestring or multilinestring
-<em>cell_size</em> Desired spatial resolution of the output raster (i.e. in metres)
-<em>buffer_width</em> Buffer length from which to calculate line densities from each raster cell centroid.
-<em>mask</em> If <code>TRUE</code> then the output raster is clipped by the study area boundary. If <code>FALSE</code> then the output raster extent is equal to bounding box of study area boundary</p>
+<ul>
+<li><strong>input_study_area</strong> <code>sf</code> polygon or multipolygon</li>
+<li><strong>input_linestring</strong> <code>sf</code> linestring or multilinestring</li>
+<li><strong>cell_size</strong> Desired spatial resolution of the output raster (i.e. in metres)</li>
+<li><strong>buffer_width</strong> Buffer length from which to calculate line densities from each raster cell centroid.</li>
+<li><strong>mask</strong> If <code>TRUE</code> then the output raster is clipped by the study area boundary. If <code>FALSE</code> then the output raster extent is equal to bounding box of study area boundary</li>
+</ul>
 </div>
 <div id="value" class="section level1">
 <h1>Value</h1>
