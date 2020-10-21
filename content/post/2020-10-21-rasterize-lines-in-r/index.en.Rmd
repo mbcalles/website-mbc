@@ -1,21 +1,21 @@
 ---
-title: Rasterize Lines in R
-author: Michael Branion-Calles
+title: "Rasterize Lines in R"
+author: "Michael Branion-Calles"
 date: '2020-10-21'
 slug: []
 categories:
-  - R
-  - sf
-  - raster
+- R
+- sf
+- raster
 tags: []
 subtitle: ''
 summary: ''
 authors: []
-lastmod: '2020-10-21T12:39:56-07:00'
+lastmod: ''
 featured: no
 image:
   caption: ''
-  focal_point: 'top'
+  focal_point: top
   preview_only: no
 projects: []
 ---
