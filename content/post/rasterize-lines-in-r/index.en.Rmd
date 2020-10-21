@@ -67,9 +67,6 @@ The function `rasterize_lines` takes the following steps to rasterize the polyli
 The function is defined below:
 
 ```{r}
-#Function that takes an input study area polygon, input polyline data and creates a "rasterized" version of the data
-#1. 
-
 rasterize_lines <- function(input_study_area,input_linestring,cell_size=100,buffer_width=300,mask=F){
   require(sf)
   require(raster)
