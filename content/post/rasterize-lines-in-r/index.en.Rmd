@@ -16,7 +16,7 @@ featured: no
 image:
   caption: ''
   focal_point: top
-  preview_only: no
+  preview_only: yes
 projects: []
 ---
 
