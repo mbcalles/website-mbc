@@ -32,7 +32,7 @@ vancouver_boundary <- st_read("D:/GitHub/website-mbc/content/post/rasterize-line
   mutate(area = st_area(.))%>%
   summarise(area = sum(area))  
   
-seperated_bl <- st_read("D:/GitHub/website-mbc/content/post/rasterize-lines-in-r",
+separated_bl <- st_read("D:/GitHub/website-mbc/content/post/rasterize-lines-in-r",
                    layer = "sep_bls")#separated bike lane polylines
 
 ```
@@ -174,7 +174,7 @@ rasterize_lines <- function(input_study_area,input_linestring,cell_size=100,buff
 I want to map the density of seperated bikelanes in Vancouver, BC as a continuous raster surface. I have two `sf` objects: 
 
   1. `vancouver_boundary`
-  2. `seperated_bl`
+  2. `separated_bl`
 
 
 Lets take at the boundary data:
@@ -192,9 +192,9 @@ Lets take a look at the separated bikelane data:
 
 ```{r}
 
-seperated_bl %>% structure()
+separated_bl%>% structure()
 
-ggplot(seperated_bl) +
+ggplot(separated_bl) +
   geom_sf() + 
   theme_bw()
 
@@ -207,8 +207,8 @@ Now I input the parameters into the `rasterize_lines()` function. I chose a 100m
 
 ```{r}
 
-sepbls_rast <- rasterize_lines(input_study_area = vancouver_boundary,
-                                          input_linestring = seperated_bl,
+sep_bl_rast <- rasterize_lines(input_study_area = vancouver_boundary,
+                                          input_linestring = separated_bl,
                                           cell_size = 100,
                                           buffer_width = 200,
                                           mask=TRUE)
@@ -221,12 +221,12 @@ Once the function runs the output is a `RasterLayer` file. We can enable mapping
 
 
 ```{r}
-sepbls_rast_df <- as.data.frame(sepbls_rast, xy = TRUE)#covert raster file to dataframe to enable mapping in ggplot
+sep_bl_rast_df <- as.data.frame(sep_bl_rast, xy = TRUE)#covert raster file to dataframe to enable mapping in ggplot
 ```
 
 ```{r}
 ggplot() +
-  geom_raster(data = sepbls_rast_df,aes(x=x,y=y,fill=layer)) + 
+  geom_raster(data = sep_bl_rast_df,aes(x=x,y=y,fill=layer)) + 
   scale_fill_viridis_c(name = "Separated\nBike Lane\nDensity") +
   xlab("Longitude") + 
   ylab("Latitude") +

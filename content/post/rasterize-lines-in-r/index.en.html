@@ -154,7 +154,7 @@ projects: []
 <p>I want to map the density of seperated bikelanes in Vancouver, BC as a continuous raster surface. I have two <code>sf</code> objects:</p>
 <ol style="list-style-type: decimal">
 <li><code>vancouver_boundary</code></li>
-<li><code>seperated_bl</code></li>
+<li><code>separated_bl</code></li>
 </ol>
 <p>Lets take at the boundary data:</p>
 <pre class="r"><code>vancouver_boundary %&gt;% structure()</code></pre>
@@ -170,7 +170,7 @@ projects: []
   theme_bw()</code></pre>
 <p><img src="/post/rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 <p>Lets take a look at the separated bikelane data:</p>
-<pre class="r"><code>seperated_bl %&gt;% structure()</code></pre>
+<pre class="r"><code>separated_bl%&gt;% structure()</code></pre>
 <pre><code>## Simple feature collection with 193 features and 9 fields
 ## geometry type:  MULTILINESTRING
 ## dimension:      XY
@@ -199,14 +199,14 @@ projects: []
 ## 8     182       1990        NS    Arterial MULTILINESTRING ((489421.9 ...
 ## 9     311       2016        EW    Arterial MULTILINESTRING ((490225.5 ...
 ## 10    143       2009        NS    Arterial MULTILINESTRING ((496922.1 ...</code></pre>
-<pre class="r"><code>ggplot(seperated_bl) +
+<pre class="r"><code>ggplot(separated_bl) +
   geom_sf() + 
   theme_bw()</code></pre>
 <p><img src="/post/rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
 <p>Note that both <code>sf</code> objects have the same coordinate reference system (CRS). This function needs each <code>sf</code> object to be in the same <em>projected</em> coordinate system.</p>
 <p>Now I input the parameters into the <code>rasterize_lines()</code> function. I chose a 100m by 100m cell size, and want to calculate the density of separated bikelanes within 300m of the centroid of each cell (500m buffer):</p>
-<pre class="r"><code>sepbls_rast &lt;- rasterize_lines(input_study_area = vancouver_boundary,
-                                          input_linestring = seperated_bl,
+<pre class="r"><code>sep_bl_rast &lt;- rasterize_lines(input_study_area = vancouver_boundary,
+                                          input_linestring = separated_bl,
                                           cell_size = 100,
                                           buffer_width = 200,
                                           mask=TRUE)</code></pre>
@@ -237,9 +237,9 @@ projects: []
 ## [1] &quot;Calculating lengths of split polylines...&quot;
 ## [1] &quot;Spatially aggregating road lengths by each cell centroid buffer&quot;</code></pre>
 <p>Once the function runs the output is a <code>RasterLayer</code> file. We can enable mapping in ggplot by converting it to a data.frame:</p>
-<pre class="r"><code>sepbls_rast_df &lt;- as.data.frame(sepbls_rast, xy = TRUE)#covert raster file to dataframe to enable mapping in ggplot</code></pre>
+<pre class="r"><code>sep_bl_rast_df &lt;- as.data.frame(sep_bl_rast, xy = TRUE)#covert raster file to dataframe to enable mapping in ggplot</code></pre>
 <pre class="r"><code>ggplot() +
-  geom_raster(data = sepbls_rast_df,aes(x=x,y=y,fill=layer)) + 
+  geom_raster(data = sep_bl_rast_df,aes(x=x,y=y,fill=layer)) + 
   scale_fill_viridis_c(name = &quot;Separated\nBike Lane\nDensity&quot;) +
   xlab(&quot;Longitude&quot;) + 
   ylab(&quot;Latitude&quot;) +
