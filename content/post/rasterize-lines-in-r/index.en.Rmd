@@ -43,11 +43,11 @@ As a part of a University level GIS course I taught I needed to generate some ra
 
 # Arguments
 
-- **input_study_area** `sf` polygon or multipolygon
-- **input_linestring** `sf` linestring or multilinestring
-- **cell_size** Desired spatial resolution of the output raster (i.e. in metres)
-- **buffer_width** Buffer length from which to calculate line densities from each raster cell centroid. 
-- **mask** If `TRUE` then the output raster is clipped by the study area boundary. If `FALSE` then the output raster extent is equal to bounding box of study area boundary
+- **input_study_area**: `sf` polygon or multipolygon
+- **input_linestring**: `sf` linestring or multilinestring
+- **cell_size**: Desired spatial resolution of the output raster (i.e. in metres)
+- **buffer_width**: Buffer length from which to calculate line densities from each raster cell centroid. 
+- **mask**: If `TRUE` then the output raster is clipped by the study area boundary. If `FALSE` then the output raster extent is equal to bounding box of study area boundary
 
 # Value 
 

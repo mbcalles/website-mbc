@@ -1,0 +1,20 @@
+---
+title: Kernel Density Estimation in Network Space
+author: Michael Branion-Calles
+date: '2020-10-21'
+slug: []
+categories:
+  - R
+  - sf
+tags: []
+subtitle: ''
+summary: ''
+authors: []
+lastmod: '2020-10-21T18:27:50-07:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+---
