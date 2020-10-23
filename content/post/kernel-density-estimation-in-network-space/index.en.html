@@ -57,22 +57,12 @@ library(stringr)</code></pre>
   filter(name==&quot;Vancouver (CY)&quot;) %&gt;%
   st_transform(crs = 26910) </code></pre>
 <pre><code>## 
-Downloading: 3.6 kB     
-Downloading: 3.6 kB     
-Downloading: 12 kB     
-Downloading: 12 kB     
-Downloading: 12 kB     
-Downloading: 12 kB     
-Downloading: 28 kB     
-Downloading: 28 kB     
-Downloading: 40 kB     
-Downloading: 40 kB     
-Downloading: 40 kB     
-Downloading: 40 kB     
-Downloading: 48 kB     
-Downloading: 48 kB     
-Downloading: 48 kB     
-Downloading: 48 kB     
+Downloading: 32 kB     
+Downloading: 32 kB     
+Downloading: 32 kB     
+Downloading: 32 kB     
+Downloading: 32 kB     
+Downloading: 32 kB     
 Downloading: 52 kB     
 Downloading: 52 kB     
 Downloading: 52 kB     
@@ -526,7 +516,7 @@ network_kde &lt;- function(lixel_list,point_process,bandwidth = 100,n_cores=1,at
 ## [1] &quot;Applying kernel density estimator with bandwidth of 150m ... &quot;
 ## [1] &quot;Applying kernel density estimator with bandwidth of 250m ... &quot;</code></pre>
 <pre><code>##    user  system elapsed 
-##   99.41    1.01  170.60</code></pre>
+##  109.34    1.23  188.86</code></pre>
 <pre class="r"><code>collisions_network_kde$network_kde</code></pre>
 <pre><code>## Simple feature collection with 61714 features and 7 fields
 ## geometry type:  LINESTRING
@@ -557,7 +547,9 @@ network_kde &lt;- function(lixel_list,point_process,bandwidth = 100,n_cores=1,at
 ## 9  LINESTRING (487975.6 545503... 24.1274 [m]
 ## 10 LINESTRING (487999.8 545503... 24.1274 [m]</code></pre>
 <p>The output of the <code>network_kde()</code> is an <code>sf</code> object with <code>LINESTRING</code> geometry, where each line segment is a lixel and the columns refer to density of events in network space for the specified bandwidths.</p>
-<p>#Mapping out the results</p>
+</div>
+<div id="mapping-out-the-results" class="section level1">
+<h1>Mapping out the results</h1>
 <p>Below we can then map out the results. We will use the 150m bandwidth in this example:</p>
 <pre class="r"><code>ggplot() +
   geom_sf(data=study_area,color=NA,fill=&quot;gray5&quot;)+
@@ -591,8 +583,8 @@ network_kde &lt;- function(lixel_list,point_process,bandwidth = 100,n_cores=1,at
 <p><img src="/post/kernel-density-estimation-in-network-space/index.en_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
 <p>That’s the network KDE function as it is for now. Some challenges going forward are computation time for higher resolution pixels and implementing different kernels other than quartic.</p>
 <details>
-<p><summary>Reproducibility receipt</summary>
-```{r echo = FALSE, message = FALSE, warning = FALSE}
+<p><summary>Reproducibility receipt</summary></p>
+<p>```{r echo = FALSE, message = FALSE, warning = FALSE}
 ## datetime
 Sys.time()</p>
 <div id="repository" class="section level2">
@@ -601,8 +593,8 @@ Sys.time()</p>
 </div>
 <div id="session-info" class="section level2">
 <h2>Session info</h2>
-sessionInfo()
-```
+<p>sessionInfo()
+```</p>
 </details>
 </div>
 </div>

@@ -567,7 +567,7 @@ collisions_network_kde$network_kde
 
 The output of the `network_kde()` is an `sf` object with `LINESTRING` geometry, where each line segment is a lixel and the columns refer to density of events in network space for the specified bandwidths. 
 
-#Mapping out the results
+# Mapping out the results
 
 Below we can then map out the results. We will use the 150m bandwidth in this example:
 
@@ -619,6 +619,7 @@ ggsave(filename = "featured.jpeg",path="D:/GitHub/website-mbc/content/post/kerne
 
 
 <details><summary>Reproducibility receipt</summary>
+
 ```{r	echo = FALSE, message = FALSE, warning = FALSE}
 ## datetime
 Sys.time()
@@ -629,4 +630,5 @@ git2r::repository()
 ## Session info
 sessionInfo()
 ```
+
 </details>
