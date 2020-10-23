@@ -1,7 +1,7 @@
 ---
 title: Kernel Density Estimation of Point Processes in Network Space in R
 author: Michael Branion-Calles
-date: '2020-10-21'
+date: '2020-10-23'
 slug: []
 categories:
   - R
@@ -12,7 +12,7 @@ tags: []
 subtitle: ''
 summary: ''
 authors: []
-lastmod: '2020-10-21T18:27:50-07:00'
+lastmod: '2020-10-23T18:27:50-07:00'
 featured: no
 image:
   caption: ''
@@ -48,7 +48,7 @@ options(cancensus.api_key = "CensusMapper_96346368de96ca68bd3f0127e25013d0")
 ```
 
 
-#Set Up
+# Set Up
 
 ```{r,message = FALSE}
 library(tidygraph)
@@ -62,11 +62,11 @@ library(ggplot2)
 library(stringr)
 ```
 
-# Loading Data
-
-## Study Area Extent
+# Getting the example data
 
 The first step is to load example data. 
+
+## Study Area Extent
 
 I use the `get_census` function from the  [`cancensus`](https://mountainmath.github.io/cancensus/index.html) package to extract a `sf` object with `POLYGON` geometries, representing the study extent: the City of Vancouver. 
 
@@ -121,7 +121,7 @@ ggplot() +
 
 ## Police Report Data
 
-Finally I get point data of police reports in Vancouver from the City of Vancouver. I subset the data to only include vehicle collisions reported to police in 2018. 
+Finally I get point data of police reports in Vancouver from the City of Vancouver. I subset the data to only include vehicle collisions reported to police in 2018 (last full year of data available). 
 
 ```{r}
 
@@ -134,20 +134,27 @@ unlink(temp)
 collisions <- crime %>% 
   filter(YEAR==2018 & str_detect(TYPE,"Vehicle Collision"))%>% 
   st_as_sf(.,coords = c("X","Y"),crs=26910)
+```
 
+Locations of police reported vehicle collisions are below. 
+
+```{r}
 ggplot(collisions) +
   geom_sf() + 
-  coord_sf()
+  coord_sf() + 
+  theme_void()
 
 ```
 
 Now we have the data we need to try and estimate the density of police-reported collisions or "hotspots" in the City of Vancouver. 
 
+NOTE: These data do not differentiate between different types of collisions between road users, and police road collision data consistently miss out on the majority of crashes that occur to active transport users (bicyclists and pedestrians).
+
 # Prepare the network data
 
-First we need to split the network into _lixels_. _Lixels_ are the 1-dimensional version of a pixel. Essentially I need to set the output resolution of density estimates along the network. 
+In the algorithm outlined in [Xie & Yan (2008)](https://www.sciencedirect.com/science/article/pii/S0198971508000318) the resulting density estimates on a network are based on a spatial unit of analysis they term a _lixel_. _Lixels_ are  basically the 1-D version of a pixel, and refer to how long the segments in our network are from which we calculate densities of events. 
 
-To do so I have two functions `split_lines()` and `lixelize network`. 
+To create a _lixelized_ network I combine the `split_lines()`  and the `lixelize network()` functions. 
 
 The `split_lines()` function has three arguments: 
 
@@ -210,7 +217,9 @@ split_lines <- function(input_lines, max_length, id) {
 }
 ```
 
-The second function needed to prepare the network data is the `lixelize_network` function. This takes two arguments, an `sf` object with `linest` and the lixel_length argument. This function will create two lixel networks: 1) the output network where the line data are _lixelized_ and no segment is larger than the a given pixel size and 2) a shortest distance network which will be used to calculate road network lengths in our network kernel density estimates that we will dive into shortly. The lixelize network function is given below:
+The second function needed to prepare the network data is the `lixelize_network` function. This takes two arguments, an `sf` object with `LINESTRING` or `MULTILINESTRING` geometry and the lixel_length argument. This function will create two lixelized networks: 1) the output network where the line data are _lixelized_ and no segment is larger than the a given pixel size and 2) a shortest distance network which will be used to calculate road network lengths in our network kernel density estimates that we will dive into shortly. 
+
+The lixelize network function is given below:
 
 
 ```{r}
@@ -224,7 +233,12 @@ lixelize_network <- function(sf_network,max_lixel_length,uid){
 
 ```
 
-To prepare our network data we will first clean the network using the `stplanr` package to remove road segments unconnected to the broader road network. First we convert our sf object to a spatial lines network object using the `SpatialLinesNetwork()` function. This will enable us to isolate the largest set of connected line segments within our dataset (e.g. remove a stranded set of road segments not connected to the larger network. )
+
+Our approach varies from Xie and Yan (2008) in that we define a "maximum" length for lixels based on the `split_lines()` function, and  segments that are larger than the specified length are split into equal sized lixels. Instead of having $n$ lixels with 1 extra "residual lixel" we instead have $n$+1 lixels of equal length, under the lixel limit. For example a 45m segment with a maximum lixel length of 10m  would be split into 5 segments of 9m instead of 4 lixels of 10m and a residual lixel of 5m.
+
+Before we use the functions described above to create a network of basic linear units _under_ a maximum length (e.g. _lixelized_ network), we will clean our existing osm data by removing unconnected segments of roads using the `stplanr`. 
+
+First we convert our `sf` road network to a spatial lines network object using the `SpatialLinesNetwork()` function, then clean use the `sln_clean_graph()` function to keep the largest set of connected road segments within our dataset. 
 
 ```{r}
 
@@ -233,17 +247,16 @@ network_sln <- sln_clean_graph(network_sln)# Remove unconnected roads
 
 ggplot(network_sln@sl) +
   geom_sf() + 
-  coord_sf()
+  coord_sf() +
+  theme_void()
 
 ````
 
-We use the cleaned `sf` object going forward in our analysis as our road network data. 
+Check out the following link for more on the `stplanr` package https://cran.r-project.org/web/packages/stplanr/vignettes/stplanr-paper.html. For now we are only using the one function from the package to clean our network.  
 
-```{r}
-network_sln@sl
-```
+## Lixelize the cleaned network
 
-As you can see we can access the `sf` 
+Next step is to lixelize the cleaned network. I choose a 25m maximum lixel length (e.g. every linear segment in the network will be 25m or under. This function may take some time to run. 
 
 ```{r}
 
@@ -254,12 +267,16 @@ lixel_list_25m <- lixelize_network(
     
 )
 
+str(lixel_list_25m)
 
 ```
 
+The output is a list of two _lixelized_ networks. The first is the lixelized network with the specified length, and the second is the same network but with lixel lengths half the size of indicated. This is the network that will be used in the network kernel density function to calculate shortest network distances from each lixel to each event on the network. More detail on that in the following section. 
+
+
 # Prepare the point data
 
-Here I need to ensure that the point data are lined up with the network data in geographic space. I use a function called `st_snap_points`. The function is given below:
+Here I need to ensure that the point data are lined up with the cleaned network data. I use a function called `st_snap_points` which "snaps" the points to the location of the nearest road segment within a specified distance tolerance. The function is given below:
 
 ```{r}
 st_snap_points = function(x, y, max_dist = 1000) {
@@ -280,26 +297,26 @@ st_snap_points = function(x, y, max_dist = 1000) {
 }
 ```
 
-We snap the points to our road network with a 20m tolerance. 
+We snap the points to our road network with a 20m tolerance: 
 
 ```{r}
+coll_snp <- st_snap_points(collisions,network_sln@sl,max_dist = 20) #this only returns the geometry - doesn't preserve attributes
 
-coll_snp <- st_snap_points(collisions,network_sln@sl,max_dist = 20)
 coll_snp <- st_sf(collisions %>%
                   st_drop_geometry() %>%
-                  mutate(geom=coll_snp))
-
-
-
+                  mutate(geom=coll_snp)) #rerturn the attributes to the snapped locations
 ```
 
 
 # Calculate Network Kernel Density
 
-- Add more detail here
+The function I have created here for calculating density of events on a network follows the algorithm outline in Xie and Yan (2008) and takes advantage of functionality from `sf`, `igraph` and `tidygraph` to to calculate shortest distances from each lixel in our network to the point processes we specify. Much of the code  in this function is adapted from an excellent resource on using these packages for network analysis: https://www.r-spatial.org/r/2019/09/26/spatial-networks.html
+
+The `network_kde()` function is defined below: 
 
 ```{r}
 
+#function for calculating the centre of 
 st_line_midpoints <- function(sf_lines = NULL) {
   
   g <- st_geometry(sf_lines)
@@ -308,7 +325,7 @@ st_line_midpoints <- function(sf_lines = NULL) {
     
     coords <- as.matrix(x)
     
-    # this is just a copypaste of View(maptools:::getMidpoints):
+    # this is just a copypaste of maptools:::getMidpoints()):
     get_mids <- function (coords) {
       dist <- sqrt((diff(coords[, 1])^2 + (diff(coords[, 2]))^2))
       dist_mid <- sum(dist)/2
@@ -332,16 +349,7 @@ st_line_midpoints <- function(sf_lines = NULL) {
 
 
 network_kde <- function(lixel_list,point_process,bandwidth = 100,n_cores=1,attribute=1,point_process_is_lixel_midpoint=FALSE){
-  #1. Create segement base linear reference system from original road network
-
-  #Done outside function using "lixelize_network"
-
-  #2. Divide each segment in basic linear units of defined length (lixel_length)
-
-  #Done outside function using "lixelize_network"
-  #Our approach varies from Xie and Yan (2008) in that we define a "maximum" length for lixels, and  segments that are larger than the specified length
-  #are split into equal sized lixels. Instead of having x lixels with 1 extra "residual lixel" we instead have x+1 lixels of equal length, under the lixel limit
-  #E.g. a 45 lixel with a maximum lixel length of 10m  would be split into 5 segments of 9m instead of 4 lixels of 10m and a residual lixel of 5m.
+  
 
   #3. Create a network of lixels by establishing the network topology between lixels as well as between lixels and lxnodes.
 
@@ -533,16 +541,17 @@ network_kde <- function(lixel_list,point_process,bandwidth = 100,n_cores=1,attri
 
 ```
 
-Parallel computing to speed up the process - list packages and stuff
+As of now I have only set up the algorithm to use a quartic kernel. 
 
-- describe parameters heren - bandwidth etc. 
+Next step is to compute the density of points on a network! The `network_kde()` function implements parallel computing functionality using the `parallel` and `doParallel` packages so we need to specify how many cores are on the computer being used:
 
 ```{r}
-
 n_cores <- bigstatsr::nb_cores()
+```
 
-#KDE for BikeMaps incidents
+Finally we specify the lixelized network we are working with, the point process from which we estimate densities of events, the bandwidths we wish to use in our density estimates and the number of cores for parallel computation. The last argument can be ignored for now and set to FALSE as it is something I'm working on to speed up computation if your point process is already associated with the segment (e.g. volumes of road users on a segment).
 
+```{r}
 system.time({
   collisions_network_kde <- network_kde(lixel_list = lixel_list_25m,
                                  point_process = coll_snp,
@@ -556,7 +565,11 @@ collisions_network_kde$network_kde
 
 ```
 
-Here is the map of kernedl density "hotspots" for the entire city 
+The output of the `network_kde()` is an `sf` object with `LINESTRING` geometry, where each line segment is a lixel and the columns refer to density of events in network space for the specified bandwidths. 
+
+#Mapping out the results
+
+Below we can then map out the results. We will use the 150m bandwidth in this example:
 
 ```{r}
 
@@ -577,7 +590,9 @@ ggplot() +
 
 ```
 
-Zoomed into downtown area
+
+Zooming into downtown:
+
 
 ```{r}
 ggplot() +
@@ -596,8 +611,22 @@ ggplot() +
 
 ```
 
+That's the network KDE function as it is for now. Some challenges going forward are computation time for higher resolution pixels and implementing different kernels other than quartic. 
 
 ```{r,include=FALSE}
 ggsave(filename = "featured.jpeg",path="D:/GitHub/website-mbc/content/post/kernel-density-estimation-in-network-space",units = "in",height = 5,width = 5,dpi = 250,device = "jpeg")
 ```
+
+
+<details><summary>Reproducibility receipt</summary>
+```{r	echo = FALSE, message = FALSE, warning = FALSE}
+## datetime
+Sys.time()
+
+## repository
+git2r::repository()
+
+## Session info
+sessionInfo()
 ```
+</details>

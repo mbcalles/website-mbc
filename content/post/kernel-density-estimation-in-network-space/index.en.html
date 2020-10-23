@@ -1,7 +1,7 @@
 ---
 title: Kernel Density Estimation of Point Processes in Network Space in R
 author: Michael Branion-Calles
-date: '2020-10-21'
+date: '2020-10-23'
 slug: []
 categories:
   - R
@@ -12,7 +12,7 @@ tags: []
 subtitle: ''
 summary: ''
 authors: []
-lastmod: '2020-10-21T18:27:50-07:00'
+lastmod: '2020-10-23T18:27:50-07:00'
 featured: no
 image:
   caption: ''
@@ -34,7 +34,8 @@ projects: []
 <p><span class="math inline">\(d_{iz}\)</span> is the linear network distance from event <span class="math inline">\(i\)</span> to location <span class="math inline">\(z\)</span>.</p>
 <p>I wanted to implement a network-based KDE in R based on the algorithm outlined in <a href="https://www.sciencedirect.com/science/article/pii/S0198971508000318">Xie &amp; Yan (2008)</a>. The network KDE is a a 1-D version of the planar kernel density estimator, with <span class="math inline">\(\tau\)</span> (bandwidth) based on network distances, rather than Euclidean distances and the output is based on <em>lixels</em>, a 1-D version of pixels), rather than pixels across 2-D euclidean space.</p>
 <p>In this post I use data from Vancouver, BC as a case study for implementing a network kernel density estimator of points in a network in R.</p>
-<p>#Set Up</p>
+<div id="set-up" class="section level1">
+<h1>Set Up</h1>
 <pre class="r"><code>library(tidygraph)
 library(igraph)
 library(stplanr)
@@ -44,29 +45,34 @@ library(dplyr)
 library(sf)
 library(ggplot2)
 library(stringr)</code></pre>
-<div id="loading-data" class="section level1">
-<h1>Loading Data</h1>
+</div>
+<div id="getting-the-example-data" class="section level1">
+<h1>Getting the example data</h1>
+<p>The first step is to load example data.</p>
 <div id="study-area-extent" class="section level2">
 <h2>Study Area Extent</h2>
-<p>The first step is to load example data.</p>
 <p>I use the <code>get_census</code> function from the <a href="https://mountainmath.github.io/cancensus/index.html"><code>cancensus</code></a> package to extract a <code>sf</code> object with <code>POLYGON</code> geometries, representing the study extent: the City of Vancouver.</p>
 <pre class="r"><code>study_area &lt;- get_census(dataset=&#39;CA16&#39;, regions=list(CSD=&quot;5915&quot;),
                      level=&#39;CSD&#39;, use_cache = FALSE,geo_format = &quot;sf&quot;) %&gt;%
   filter(name==&quot;Vancouver (CY)&quot;) %&gt;%
   st_transform(crs = 26910) </code></pre>
 <pre><code>## 
+Downloading: 3.6 kB     
+Downloading: 3.6 kB     
+Downloading: 12 kB     
+Downloading: 12 kB     
 Downloading: 12 kB     
 Downloading: 12 kB     
 Downloading: 28 kB     
 Downloading: 28 kB     
-Downloading: 32 kB     
-Downloading: 32 kB     
-Downloading: 36 kB     
-Downloading: 36 kB     
 Downloading: 40 kB     
 Downloading: 40 kB     
 Downloading: 40 kB     
 Downloading: 40 kB     
+Downloading: 48 kB     
+Downloading: 48 kB     
+Downloading: 48 kB     
+Downloading: 48 kB     
 Downloading: 52 kB     
 Downloading: 52 kB     
 Downloading: 52 kB     
@@ -110,7 +116,7 @@ ggplot() +
 </div>
 <div id="police-report-data" class="section level2">
 <h2>Police Report Data</h2>
-<p>Finally I get point data of police reports in Vancouver from the City of Vancouver. I subset the data to only include vehicle collisions reported to police in 2018.</p>
+<p>Finally I get point data of police reports in Vancouver from the City of Vancouver. I subset the data to only include vehicle collisions reported to police in 2018 (last full year of data available).</p>
 <pre class="r"><code>url &lt;- &quot;ftp://webftp.vancouver.ca/opendata/csv/crime_csv_all_years.zip&quot;
 temp &lt;- tempfile()
 download.file(url, temp)
@@ -119,19 +125,21 @@ unlink(temp)
 
 collisions &lt;- crime %&gt;% 
   filter(YEAR==2018 &amp; str_detect(TYPE,&quot;Vehicle Collision&quot;))%&gt;% 
-  st_as_sf(.,coords = c(&quot;X&quot;,&quot;Y&quot;),crs=26910)
-
-ggplot(collisions) +
+  st_as_sf(.,coords = c(&quot;X&quot;,&quot;Y&quot;),crs=26910)</code></pre>
+<p>Locations of police reported vehicle collisions are below.</p>
+<pre class="r"><code>ggplot(collisions) +
   geom_sf() + 
-  coord_sf()</code></pre>
-<p><img src="/post/kernel-density-estimation-in-network-space/index.en_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+  coord_sf() + 
+  theme_void()</code></pre>
+<p><img src="/post/kernel-density-estimation-in-network-space/index.en_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
 <p>Now we have the data we need to try and estimate the density of police-reported collisions or “hotspots” in the City of Vancouver.</p>
+<p>NOTE: These data do not differentiate between different types of collisions between road users, and police road collision data consistently miss out on the majority of crashes that occur to active transport users (bicyclists and pedestrians).</p>
 </div>
 </div>
 <div id="prepare-the-network-data" class="section level1">
 <h1>Prepare the network data</h1>
-<p>First we need to split the network into <em>lixels</em>. <em>Lixels</em> are the 1-dimensional version of a pixel. Essentially I need to set the output resolution of density estimates along the network.</p>
-<p>To do so I have two functions <code>split_lines()</code> and <code>lixelize network</code>.</p>
+<p>In the algorithm outlined in <a href="https://www.sciencedirect.com/science/article/pii/S0198971508000318">Xie &amp; Yan (2008)</a> the resulting density estimates on a network are based on a spatial unit of analysis they term a <em>lixel</em>. <em>Lixels</em> are basically the 1-D version of a pixel, and refer to how long the segments in our network are from which we calculate densities of events.</p>
+<p>To create a <em>lixelized</em> network I combine the <code>split_lines()</code> and the <code>lixelize network()</code> functions.</p>
 <p>The <code>split_lines()</code> function has three arguments:</p>
 <ul>
 <li><strong>input_lines</strong>: <code>sf</code> object with <code>LINSETRING</code> or <code>MULTILINESTRING</code> geometry</li>
@@ -188,7 +196,8 @@ ggplot(collisions) +
 
   return(lixel)
 }</code></pre>
-<p>The second function needed to prepare the network data is the <code>lixelize_network</code> function. This takes two arguments, an <code>sf</code> object with <code>linest</code> and the lixel_length argument. This function will create two lixel networks: 1) the output network where the line data are <em>lixelized</em> and no segment is larger than the a given pixel size and 2) a shortest distance network which will be used to calculate road network lengths in our network kernel density estimates that we will dive into shortly. The lixelize network function is given below:</p>
+<p>The second function needed to prepare the network data is the <code>lixelize_network</code> function. This takes two arguments, an <code>sf</code> object with <code>LINESTRING</code> or <code>MULTILINESTRING</code> geometry and the lixel_length argument. This function will create two lixelized networks: 1) the output network where the line data are <em>lixelized</em> and no segment is larger than the a given pixel size and 2) a shortest distance network which will be used to calculate road network lengths in our network kernel density estimates that we will dive into shortly.</p>
+<p>The lixelize network function is given below:</p>
 <pre class="r"><code>lixelize_network &lt;- function(sf_network,max_lixel_length,uid){
   print(&quot;Splitting input spatial lines by lixel length...&quot;)
   target_lixel &lt;- split_lines(input_lines = sf_network,max_length = max_lixel_length,id = uid)
@@ -196,476 +205,23 @@ ggplot(collisions) +
   shortest_distance_network &lt;- split_lines(input_lines = target_lixel,max_length = max_lixel_length/2,id = uid)
   return(list(target_lixel=target_lixel,shortest_distance_network=shortest_distance_network))
 }</code></pre>
-<p>To prepare our network data we will first clean the network using the <code>stplanr</code> package to remove road segments unconnected to the broader road network. First we convert our sf object to a spatial lines network object using the <code>SpatialLinesNetwork()</code> function. This will enable us to isolate the largest set of connected line segments within our dataset (e.g. remove a stranded set of road segments not connected to the larger network. )</p>
+<p>Our approach varies from Xie and Yan (2008) in that we define a “maximum” length for lixels based on the <code>split_lines()</code> function, and segments that are larger than the specified length are split into equal sized lixels. Instead of having <span class="math inline">\(n\)</span> lixels with 1 extra “residual lixel” we instead have <span class="math inline">\(n\)</span>+1 lixels of equal length, under the lixel limit. For example a 45m segment with a maximum lixel length of 10m would be split into 5 segments of 9m instead of 4 lixels of 10m and a residual lixel of 5m.</p>
+<p>Before we use the functions described above to create a network of basic linear units <em>under</em> a maximum length (e.g. <em>lixelized</em> network), we will clean our existing osm data by removing unconnected segments of roads using the <code>stplanr</code>.</p>
+<p>First we convert our <code>sf</code> road network to a spatial lines network object using the <code>SpatialLinesNetwork()</code> function, then clean use the <code>sln_clean_graph()</code> function to keep the largest set of connected road segments within our dataset.</p>
 <pre class="r"><code>network_sln &lt;- SpatialLinesNetwork(streets_sf)</code></pre>
 <pre><code>## Warning in SpatialLinesNetwork.sf(streets_sf): Graph composed of multiple
 ## subgraphs, consider cleaning it with sln_clean_graph().</code></pre>
 <pre class="r"><code>network_sln &lt;- sln_clean_graph(network_sln)# Remove unconnected roads</code></pre>
-<pre><code>## Input sln composed of 7624 graphs. Selecting the largest.</code></pre>
+<pre><code>## Input sln composed of 7643 graphs. Selecting the largest.</code></pre>
 <pre class="r"><code>ggplot(network_sln@sl) +
   geom_sf() + 
-  coord_sf()</code></pre>
-<p><img src="/post/kernel-density-estimation-in-network-space/index.en_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
-<p>We use the cleaned <code>sf</code> object going forward in our analysis as our road network data.</p>
-<pre class="r"><code>network_sln@sl</code></pre>
-<pre><code>## Simple feature collection with 7400 features and 221 fields
-## geometry type:  LINESTRING
-## dimension:      XY
-## bbox:           xmin: 482364.1 ymin: 5449003 xmax: 498834.3 ymax: 5463459
-## projected CRS:  NAD83 / UTM zone 10N
-## First 10 features:
-##          osm_id                    name Note2 access addr.city addr.housenumber
-## 4231647 4231647 West King Edward Avenue  &lt;NA&gt;   &lt;NA&gt;      &lt;NA&gt;             &lt;NA&gt;
-## 4231648 4231648        Granville Street  &lt;NA&gt;   &lt;NA&gt;      &lt;NA&gt;             &lt;NA&gt;
-## 4231651 4231651        East 12th Avenue  &lt;NA&gt;   &lt;NA&gt;      &lt;NA&gt;             &lt;NA&gt;
-## 4231652 4231652 South Grandview Highway  &lt;NA&gt;   &lt;NA&gt;      &lt;NA&gt;             &lt;NA&gt;
-## 4241338 4241338           East Broadway  &lt;NA&gt;   &lt;NA&gt;      &lt;NA&gt;             &lt;NA&gt;
-## 4254278 4254278                Kingsway  &lt;NA&gt;   &lt;NA&gt;      &lt;NA&gt;             &lt;NA&gt;
-## 4299526 4299526  Southeast Marine Drive  &lt;NA&gt;   &lt;NA&gt;      &lt;NA&gt;             &lt;NA&gt;
-## 4323332 4323332            Yukon Street  &lt;NA&gt;   &lt;NA&gt;      &lt;NA&gt;             &lt;NA&gt;
-## 4323338 4323338         West 7th Avenue  &lt;NA&gt;   &lt;NA&gt;      &lt;NA&gt;             &lt;NA&gt;
-## 4360742 4360742        Brunswick Street  &lt;NA&gt;   &lt;NA&gt;      &lt;NA&gt;             &lt;NA&gt;
-##         addr.postcode addr.street alt_name amenity area area.highway
-## 4231647          &lt;NA&gt;        &lt;NA&gt;     &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;         &lt;NA&gt;
-## 4231648          &lt;NA&gt;        &lt;NA&gt;     &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;         &lt;NA&gt;
-## 4231651          &lt;NA&gt;        &lt;NA&gt;     &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;         &lt;NA&gt;
-## 4231652          &lt;NA&gt;        &lt;NA&gt;     &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;         &lt;NA&gt;
-## 4241338          &lt;NA&gt;        &lt;NA&gt;     &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;         &lt;NA&gt;
-## 4254278          &lt;NA&gt;        &lt;NA&gt;     &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;         &lt;NA&gt;
-## 4299526          &lt;NA&gt;        &lt;NA&gt;     &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;         &lt;NA&gt;
-## 4323332          &lt;NA&gt;        &lt;NA&gt;     &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;         &lt;NA&gt;
-## 4323338          &lt;NA&gt;        &lt;NA&gt;     &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;         &lt;NA&gt;
-## 4360742          &lt;NA&gt;        &lt;NA&gt;     &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;         &lt;NA&gt;
-##         attribution barrier bicycle boundary bridge bridge.name
-## 4231647        &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;        &lt;NA&gt;
-## 4231648        &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;        &lt;NA&gt;
-## 4231651        &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;        &lt;NA&gt;
-## 4231652        &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;        &lt;NA&gt;
-## 4241338        &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;        &lt;NA&gt;
-## 4254278        &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;        &lt;NA&gt;
-## 4299526        &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;        &lt;NA&gt;
-## 4323332        &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;        &lt;NA&gt;
-## 4323338        &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;        &lt;NA&gt;
-## 4360742        &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;        &lt;NA&gt;
-##         bridge.structure bridge_name bridge_name.en bridge_name.fr building
-## 4231647             &lt;NA&gt;        &lt;NA&gt;           &lt;NA&gt;           &lt;NA&gt;     &lt;NA&gt;
-## 4231648             &lt;NA&gt;        &lt;NA&gt;           &lt;NA&gt;           &lt;NA&gt;     &lt;NA&gt;
-## 4231651             &lt;NA&gt;        &lt;NA&gt;           &lt;NA&gt;           &lt;NA&gt;     &lt;NA&gt;
-## 4231652             &lt;NA&gt;        &lt;NA&gt;           &lt;NA&gt;           &lt;NA&gt;     &lt;NA&gt;
-## 4241338             &lt;NA&gt;        &lt;NA&gt;           &lt;NA&gt;           &lt;NA&gt;     &lt;NA&gt;
-## 4254278             &lt;NA&gt;        &lt;NA&gt;           &lt;NA&gt;           &lt;NA&gt;     &lt;NA&gt;
-## 4299526             &lt;NA&gt;        &lt;NA&gt;           &lt;NA&gt;           &lt;NA&gt;     &lt;NA&gt;
-## 4323332             &lt;NA&gt;        &lt;NA&gt;           &lt;NA&gt;           &lt;NA&gt;     &lt;NA&gt;
-## 4323338             &lt;NA&gt;        &lt;NA&gt;           &lt;NA&gt;           &lt;NA&gt;     &lt;NA&gt;
-## 4360742             &lt;NA&gt;        &lt;NA&gt;           &lt;NA&gt;           &lt;NA&gt;     &lt;NA&gt;
-##         building.levels  bus bus.lanes busway button_operated canvec.CODE  car
-## 4231647            &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;   &lt;NA&gt;            &lt;NA&gt;        &lt;NA&gt; &lt;NA&gt;
-## 4231648            &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;   &lt;NA&gt;            &lt;NA&gt;        &lt;NA&gt; &lt;NA&gt;
-## 4231651            &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;   &lt;NA&gt;            &lt;NA&gt;        &lt;NA&gt; &lt;NA&gt;
-## 4231652            &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;   &lt;NA&gt;            &lt;NA&gt;        &lt;NA&gt; &lt;NA&gt;
-## 4241338            &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;   &lt;NA&gt;            &lt;NA&gt;        &lt;NA&gt; &lt;NA&gt;
-## 4254278            &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;   &lt;NA&gt;            &lt;NA&gt;        &lt;NA&gt; &lt;NA&gt;
-## 4299526            &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;   &lt;NA&gt;            &lt;NA&gt;        &lt;NA&gt; &lt;NA&gt;
-## 4323332            &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;   &lt;NA&gt;            &lt;NA&gt;        &lt;NA&gt; &lt;NA&gt;
-## 4323338            &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;   &lt;NA&gt;            &lt;NA&gt;        &lt;NA&gt; &lt;NA&gt;
-## 4360742            &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;   &lt;NA&gt;            &lt;NA&gt;        &lt;NA&gt; &lt;NA&gt;
-##         change.lanes.backward change.lanes.forward construction covered
-## 4231647                  &lt;NA&gt;                 &lt;NA&gt;         &lt;NA&gt;    &lt;NA&gt;
-## 4231648                  &lt;NA&gt;                 &lt;NA&gt;         &lt;NA&gt;    &lt;NA&gt;
-## 4231651                  &lt;NA&gt;                 &lt;NA&gt;         &lt;NA&gt;    &lt;NA&gt;
-## 4231652                  &lt;NA&gt;                 &lt;NA&gt;         &lt;NA&gt;    &lt;NA&gt;
-## 4241338                  &lt;NA&gt;                 &lt;NA&gt;         &lt;NA&gt;    &lt;NA&gt;
-## 4254278                  &lt;NA&gt;                 &lt;NA&gt;         &lt;NA&gt;    &lt;NA&gt;
-## 4299526                  &lt;NA&gt;                 &lt;NA&gt;         &lt;NA&gt;    &lt;NA&gt;
-## 4323332                  &lt;NA&gt;                 &lt;NA&gt;         &lt;NA&gt;    &lt;NA&gt;
-## 4323338                  &lt;NA&gt;                 &lt;NA&gt;         &lt;NA&gt;    &lt;NA&gt;
-## 4360742                  &lt;NA&gt;                 &lt;NA&gt;         &lt;NA&gt;    &lt;NA&gt;
-##         created_by crossing crossing.island cutting cycleway cycleway.both
-## 4231647       &lt;NA&gt;     &lt;NA&gt;            &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;          &lt;NA&gt;
-## 4231648       &lt;NA&gt;     &lt;NA&gt;            &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;          &lt;NA&gt;
-## 4231651       &lt;NA&gt;     &lt;NA&gt;            &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;          &lt;NA&gt;
-## 4231652       &lt;NA&gt;     &lt;NA&gt;            &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;          &lt;NA&gt;
-## 4241338       &lt;NA&gt;     &lt;NA&gt;            &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;            no
-## 4254278       &lt;NA&gt;     &lt;NA&gt;            &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;          &lt;NA&gt;
-## 4299526       &lt;NA&gt;     &lt;NA&gt;            &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;          &lt;NA&gt;
-## 4323332       &lt;NA&gt;     &lt;NA&gt;            &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;          &lt;NA&gt;
-## 4323338       &lt;NA&gt;     &lt;NA&gt;            &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;          &lt;NA&gt;
-## 4360742       &lt;NA&gt;     &lt;NA&gt;            &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;          &lt;NA&gt;
-##         cycleway.left cycleway.right description description.bicycle
-## 4231647          &lt;NA&gt;           &lt;NA&gt;        &lt;NA&gt;                &lt;NA&gt;
-## 4231648          &lt;NA&gt;           &lt;NA&gt;        &lt;NA&gt;                &lt;NA&gt;
-## 4231651          &lt;NA&gt;           &lt;NA&gt;        &lt;NA&gt;                &lt;NA&gt;
-## 4231652          &lt;NA&gt;           &lt;NA&gt;        &lt;NA&gt;                &lt;NA&gt;
-## 4241338          &lt;NA&gt;           &lt;NA&gt;        &lt;NA&gt;                &lt;NA&gt;
-## 4254278          &lt;NA&gt;           &lt;NA&gt;        &lt;NA&gt;                &lt;NA&gt;
-## 4299526          &lt;NA&gt;           &lt;NA&gt;        &lt;NA&gt;                &lt;NA&gt;
-## 4323332          &lt;NA&gt;           &lt;NA&gt;        &lt;NA&gt;                &lt;NA&gt;
-## 4323338          &lt;NA&gt;           &lt;NA&gt;        &lt;NA&gt;                &lt;NA&gt;
-## 4360742          &lt;NA&gt;           &lt;NA&gt;        &lt;NA&gt;                &lt;NA&gt;
-##         destination destination.backward destination.forward destination.lanes
-## 4231647        &lt;NA&gt;                 &lt;NA&gt;                &lt;NA&gt;              &lt;NA&gt;
-## 4231648        &lt;NA&gt;                 &lt;NA&gt;                &lt;NA&gt;              &lt;NA&gt;
-## 4231651        &lt;NA&gt;                 &lt;NA&gt;                &lt;NA&gt;              &lt;NA&gt;
-## 4231652        &lt;NA&gt;                 &lt;NA&gt;                &lt;NA&gt;              &lt;NA&gt;
-## 4241338        &lt;NA&gt;                 &lt;NA&gt;                &lt;NA&gt;              &lt;NA&gt;
-## 4254278        &lt;NA&gt;                 &lt;NA&gt;                &lt;NA&gt;              &lt;NA&gt;
-## 4299526        &lt;NA&gt;                 &lt;NA&gt;                &lt;NA&gt;              &lt;NA&gt;
-## 4323332        &lt;NA&gt;                 &lt;NA&gt;                &lt;NA&gt;              &lt;NA&gt;
-## 4323338        &lt;NA&gt;                 &lt;NA&gt;                &lt;NA&gt;              &lt;NA&gt;
-## 4360742        &lt;NA&gt;                 &lt;NA&gt;                &lt;NA&gt;              &lt;NA&gt;
-##         destination.ref destination.ref.lanes destination.ref.to
-## 4231647            &lt;NA&gt;                  &lt;NA&gt;               &lt;NA&gt;
-## 4231648            &lt;NA&gt;                  &lt;NA&gt;               &lt;NA&gt;
-## 4231651            &lt;NA&gt;                  &lt;NA&gt;               &lt;NA&gt;
-## 4231652            &lt;NA&gt;                  &lt;NA&gt;               &lt;NA&gt;
-## 4241338            &lt;NA&gt;                  &lt;NA&gt;               &lt;NA&gt;
-## 4254278            &lt;NA&gt;                  &lt;NA&gt;               &lt;NA&gt;
-## 4299526            &lt;NA&gt;                  &lt;NA&gt;               &lt;NA&gt;
-## 4323332            &lt;NA&gt;                  &lt;NA&gt;               &lt;NA&gt;
-## 4323338            &lt;NA&gt;                  &lt;NA&gt;               &lt;NA&gt;
-## 4360742            &lt;NA&gt;                  &lt;NA&gt;               &lt;NA&gt;
-##         destination.street destination.symbol direction  dog dogs embankment
-## 4231647               &lt;NA&gt;               &lt;NA&gt;      &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4231648               &lt;NA&gt;               &lt;NA&gt;      &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4231651               &lt;NA&gt;               &lt;NA&gt;      &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4231652               &lt;NA&gt;               &lt;NA&gt;      &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4241338               &lt;NA&gt;               &lt;NA&gt;      &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4254278               &lt;NA&gt;               &lt;NA&gt;      &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4299526               &lt;NA&gt;               &lt;NA&gt;      &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4323332               &lt;NA&gt;               &lt;NA&gt;      &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4323338               &lt;NA&gt;               &lt;NA&gt;      &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4360742               &lt;NA&gt;               &lt;NA&gt;      &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-##         est_width except fixme floating foot footway
-## 4231647      &lt;NA&gt;   &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;
-## 4231648      &lt;NA&gt;   &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;
-## 4231651      &lt;NA&gt;   &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;
-## 4231652      &lt;NA&gt;   &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;
-## 4241338      &lt;NA&gt;   &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;
-## 4254278      &lt;NA&gt;   &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt;   no    &lt;NA&gt;
-## 4299526      &lt;NA&gt;   &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;
-## 4323332      &lt;NA&gt;   &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;
-## 4323338      &lt;NA&gt;   &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;
-## 4360742      &lt;NA&gt;   &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;
-##         geobase.acquisitionTechnique geobase.datasetName geobase.uuid golf
-## 4231647                         &lt;NA&gt;                &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;
-## 4231648                         &lt;NA&gt;                &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;
-## 4231651                         &lt;NA&gt;                &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;
-## 4231652                         &lt;NA&gt;                &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;
-## 4241338                         &lt;NA&gt;                &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;
-## 4254278                         &lt;NA&gt;                &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;
-## 4299526                         &lt;NA&gt;                &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;
-## 4323332                         &lt;NA&gt;                &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;
-## 4323338                         &lt;NA&gt;                &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;
-## 4360742                         &lt;NA&gt;                &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;
-##         golf_cart handrail hazmat height  hgv      highway historic horse
-## 4231647      &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;    secondary     &lt;NA&gt;  &lt;NA&gt;
-## 4231648      &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;        trunk     &lt;NA&gt;  &lt;NA&gt;
-## 4231651      &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt;   no    secondary     &lt;NA&gt;  &lt;NA&gt;
-## 4231652      &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt;   no    secondary     &lt;NA&gt;  &lt;NA&gt;
-## 4241338      &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;      primary     &lt;NA&gt;  &lt;NA&gt;
-## 4254278      &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;      primary     &lt;NA&gt;  &lt;NA&gt;
-## 4299526      &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt;   no     tertiary     &lt;NA&gt;  &lt;NA&gt;
-## 4323332      &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt; unclassified     &lt;NA&gt;  &lt;NA&gt;
-## 4323338      &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;     tertiary     &lt;NA&gt;  &lt;NA&gt;
-## 4360742      &lt;NA&gt;     &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;  residential     &lt;NA&gt;  &lt;NA&gt;
-##         hov.lanes hov.minimum incline indoor informal information
-## 4231647      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;
-## 4231648      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;
-## 4231651      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;
-## 4231652      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;
-## 4241338      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;
-## 4254278      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;
-## 4299526      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;
-## 4323332      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;
-## 4323338      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;
-## 4360742      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;
-##         internet_access internet_access.fee                       is_in
-## 4231647            &lt;NA&gt;                &lt;NA&gt; Vancouver, British Columbia
-## 4231648            &lt;NA&gt;                &lt;NA&gt;                        &lt;NA&gt;
-## 4231651            &lt;NA&gt;                &lt;NA&gt;                        &lt;NA&gt;
-## 4231652            &lt;NA&gt;                &lt;NA&gt;                        &lt;NA&gt;
-## 4241338            &lt;NA&gt;                &lt;NA&gt;                        &lt;NA&gt;
-## 4254278            &lt;NA&gt;                &lt;NA&gt;                        &lt;NA&gt;
-## 4299526            &lt;NA&gt;                &lt;NA&gt;                        &lt;NA&gt;
-## 4323332            &lt;NA&gt;                &lt;NA&gt;                        &lt;NA&gt;
-## 4323338            &lt;NA&gt;                &lt;NA&gt;                        &lt;NA&gt;
-## 4360742            &lt;NA&gt;                &lt;NA&gt;                        &lt;NA&gt;
-##         junction junction.ref kerb landuse lanes lanes.backward lanes.bus
-## 4231647     &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;     1           &lt;NA&gt;      &lt;NA&gt;
-## 4231648     &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;     6           &lt;NA&gt;      &lt;NA&gt;
-## 4231651     &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;
-## 4231652     &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;
-## 4241338     &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;
-## 4254278     &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;     2           &lt;NA&gt;      &lt;NA&gt;
-## 4299526     &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;
-## 4323332     &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;
-## 4323338     &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;
-## 4360742     &lt;NA&gt;         &lt;NA&gt; &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;
-##         lanes.bus.backward lanes.bus.backward.conditional lanes.bus.conditional
-## 4231647               &lt;NA&gt;                           &lt;NA&gt;                  &lt;NA&gt;
-## 4231648               &lt;NA&gt;                           &lt;NA&gt;                  &lt;NA&gt;
-## 4231651               &lt;NA&gt;                           &lt;NA&gt;                  &lt;NA&gt;
-## 4231652               &lt;NA&gt;                           &lt;NA&gt;                  &lt;NA&gt;
-## 4241338               &lt;NA&gt;                           &lt;NA&gt;                  &lt;NA&gt;
-## 4254278               &lt;NA&gt;                           &lt;NA&gt;                  &lt;NA&gt;
-## 4299526               &lt;NA&gt;                           &lt;NA&gt;                  &lt;NA&gt;
-## 4323332               &lt;NA&gt;                           &lt;NA&gt;                  &lt;NA&gt;
-## 4323338               &lt;NA&gt;                           &lt;NA&gt;                  &lt;NA&gt;
-## 4360742               &lt;NA&gt;                           &lt;NA&gt;                  &lt;NA&gt;
-##         lanes.bus.forward lanes.bus.forward.conditional lanes.forward layer
-## 4231647              &lt;NA&gt;                          &lt;NA&gt;          &lt;NA&gt;  &lt;NA&gt;
-## 4231648              &lt;NA&gt;                          &lt;NA&gt;          &lt;NA&gt;  &lt;NA&gt;
-## 4231651              &lt;NA&gt;                          &lt;NA&gt;          &lt;NA&gt;  &lt;NA&gt;
-## 4231652              &lt;NA&gt;                          &lt;NA&gt;          &lt;NA&gt;  &lt;NA&gt;
-## 4241338              &lt;NA&gt;                          &lt;NA&gt;          &lt;NA&gt;  &lt;NA&gt;
-## 4254278              &lt;NA&gt;                          &lt;NA&gt;          &lt;NA&gt;  &lt;NA&gt;
-## 4299526              &lt;NA&gt;                          &lt;NA&gt;          &lt;NA&gt;  &lt;NA&gt;
-## 4323332              &lt;NA&gt;                          &lt;NA&gt;          &lt;NA&gt;  &lt;NA&gt;
-## 4323338              &lt;NA&gt;                          &lt;NA&gt;          &lt;NA&gt;  &lt;NA&gt;
-## 4360742              &lt;NA&gt;                          &lt;NA&gt;          &lt;NA&gt;  &lt;NA&gt;
-##          lcn lcn_ref leisure level line  lit loc_name location man_made
-## 4231647 &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4231648 &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4231651 &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4231652 &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4241338 &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4254278 &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4299526 &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4323332 &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4323338 &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4360742 &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-##         maxheight maxspeed maxspeed.advisory maxspeed.conditional maxspeed.type
-## 4231647      &lt;NA&gt;       50              &lt;NA&gt;                 &lt;NA&gt;          &lt;NA&gt;
-## 4231648      &lt;NA&gt;       50              &lt;NA&gt;                 &lt;NA&gt;          &lt;NA&gt;
-## 4231651      &lt;NA&gt;       50              &lt;NA&gt;                 &lt;NA&gt;          &lt;NA&gt;
-## 4231652      &lt;NA&gt;       50              &lt;NA&gt;                 &lt;NA&gt;          &lt;NA&gt;
-## 4241338      &lt;NA&gt;       50              &lt;NA&gt;                 &lt;NA&gt;          &lt;NA&gt;
-## 4254278      &lt;NA&gt;       50              &lt;NA&gt;                 &lt;NA&gt;          &lt;NA&gt;
-## 4299526      &lt;NA&gt;     &lt;NA&gt;              &lt;NA&gt;                 &lt;NA&gt;          &lt;NA&gt;
-## 4323332      &lt;NA&gt;     &lt;NA&gt;              &lt;NA&gt;                 &lt;NA&gt;          &lt;NA&gt;
-## 4323338      &lt;NA&gt;     &lt;NA&gt;              &lt;NA&gt;                 &lt;NA&gt;          &lt;NA&gt;
-## 4360742      &lt;NA&gt;     &lt;NA&gt;              &lt;NA&gt;                 &lt;NA&gt;          &lt;NA&gt;
-##         maxweight min_height motor_vehicle motor_vehicle.lanes motorcar
-## 4231647      &lt;NA&gt;       &lt;NA&gt;          &lt;NA&gt;                &lt;NA&gt;     &lt;NA&gt;
-## 4231648      &lt;NA&gt;       &lt;NA&gt;          &lt;NA&gt;                &lt;NA&gt;     &lt;NA&gt;
-## 4231651      &lt;NA&gt;       &lt;NA&gt;          &lt;NA&gt;                &lt;NA&gt;     &lt;NA&gt;
-## 4231652      &lt;NA&gt;       &lt;NA&gt;          &lt;NA&gt;                &lt;NA&gt;     &lt;NA&gt;
-## 4241338      &lt;NA&gt;       &lt;NA&gt;          &lt;NA&gt;                &lt;NA&gt;     &lt;NA&gt;
-## 4254278      &lt;NA&gt;       &lt;NA&gt;          &lt;NA&gt;                &lt;NA&gt;     &lt;NA&gt;
-## 4299526      &lt;NA&gt;       &lt;NA&gt;          &lt;NA&gt;                &lt;NA&gt;     &lt;NA&gt;
-## 4323332      &lt;NA&gt;       &lt;NA&gt;          &lt;NA&gt;                &lt;NA&gt;     &lt;NA&gt;
-## 4323338      &lt;NA&gt;       &lt;NA&gt;          &lt;NA&gt;                &lt;NA&gt;     &lt;NA&gt;
-## 4360742      &lt;NA&gt;       &lt;NA&gt;          &lt;NA&gt;                &lt;NA&gt;     &lt;NA&gt;
-##         motorcycle motorcycle.lanes  mtb mtb.scale name.en name.fr name.zh
-## 4231647       &lt;NA&gt;             &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;
-## 4231648       &lt;NA&gt;             &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;
-## 4231651       &lt;NA&gt;             &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;
-## 4231652       &lt;NA&gt;             &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;
-## 4241338       &lt;NA&gt;             &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;
-## 4254278       &lt;NA&gt;             &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;
-## 4299526       &lt;NA&gt;             &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;
-## 4323332       &lt;NA&gt;             &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;
-## 4323338       &lt;NA&gt;             &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;
-## 4360742       &lt;NA&gt;             &lt;NA&gt; &lt;NA&gt;      &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;    &lt;NA&gt;
-##         natural network noexit noname note note1 note.bicycle note_2 odbl
-## 4231647    &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;         &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;
-## 4231648    &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;         &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;
-## 4231651    &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;         &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;
-## 4231652    &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;         &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;
-## 4241338    &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;         &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;
-## 4254278    &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;         &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;
-## 4299526    &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;         &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;
-## 4323332    &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;         &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;
-## 4323338    &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;         &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;
-## 4360742    &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;         &lt;NA&gt;   &lt;NA&gt; &lt;NA&gt;
-##         official_name old_railway_operator old_ref oneway oneway.bicycle
-## 4231647          &lt;NA&gt;                 &lt;NA&gt;    &lt;NA&gt;    yes           &lt;NA&gt;
-## 4231648          &lt;NA&gt;                 &lt;NA&gt;    &lt;NA&gt;     no           &lt;NA&gt;
-## 4231651          &lt;NA&gt;                 &lt;NA&gt;    &lt;NA&gt;     no           &lt;NA&gt;
-## 4231652          &lt;NA&gt;                 &lt;NA&gt;    &lt;NA&gt;     no           &lt;NA&gt;
-## 4241338          &lt;NA&gt;                 &lt;NA&gt;    &lt;NA&gt;     no           &lt;NA&gt;
-## 4254278          &lt;NA&gt;                 &lt;NA&gt;    &lt;NA&gt;    yes           &lt;NA&gt;
-## 4299526          &lt;NA&gt;                 &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;           &lt;NA&gt;
-## 4323332          &lt;NA&gt;                 &lt;NA&gt;    &lt;NA&gt;    yes           &lt;NA&gt;
-## 4323338          &lt;NA&gt;                 &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;           &lt;NA&gt;
-## 4360742          &lt;NA&gt;                 &lt;NA&gt;    &lt;NA&gt;   &lt;NA&gt;           &lt;NA&gt;
-##         opening_hours operator parking.condition.both parking.condition.left
-## 4231647          &lt;NA&gt;     &lt;NA&gt;                   &lt;NA&gt;                   &lt;NA&gt;
-## 4231648          &lt;NA&gt;     &lt;NA&gt;                   &lt;NA&gt;                   &lt;NA&gt;
-## 4231651          &lt;NA&gt;     &lt;NA&gt;                   &lt;NA&gt;                   &lt;NA&gt;
-## 4231652          &lt;NA&gt;     &lt;NA&gt;                   &lt;NA&gt;                   &lt;NA&gt;
-## 4241338          &lt;NA&gt;     &lt;NA&gt;                   &lt;NA&gt;                   &lt;NA&gt;
-## 4254278          &lt;NA&gt;     &lt;NA&gt;                   &lt;NA&gt;                   &lt;NA&gt;
-## 4299526          &lt;NA&gt;     &lt;NA&gt;                   &lt;NA&gt;                   &lt;NA&gt;
-## 4323332          &lt;NA&gt;     &lt;NA&gt;                   &lt;NA&gt;                   &lt;NA&gt;
-## 4323338          &lt;NA&gt;     &lt;NA&gt;                   &lt;NA&gt;                   &lt;NA&gt;
-## 4360742          &lt;NA&gt;     &lt;NA&gt;                   &lt;NA&gt;                   &lt;NA&gt;
-##         parking.condition.left.time_interval parking.condition.right
-## 4231647                                 &lt;NA&gt;                    &lt;NA&gt;
-## 4231648                                 &lt;NA&gt;                    &lt;NA&gt;
-## 4231651                                 &lt;NA&gt;                    &lt;NA&gt;
-## 4231652                                 &lt;NA&gt;                    &lt;NA&gt;
-## 4241338                                 &lt;NA&gt;                    &lt;NA&gt;
-## 4254278                                 &lt;NA&gt;                    &lt;NA&gt;
-## 4299526                                 &lt;NA&gt;                    &lt;NA&gt;
-## 4323332                                 &lt;NA&gt;                    &lt;NA&gt;
-## 4323338                                 &lt;NA&gt;                    &lt;NA&gt;
-## 4360742                                 &lt;NA&gt;                    &lt;NA&gt;
-##         parking.lane.both parking.lane.left parking.lane.right phone pier place
-## 4231647              &lt;NA&gt;              &lt;NA&gt;               &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;
-## 4231648              &lt;NA&gt;              &lt;NA&gt;               &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;
-## 4231651              &lt;NA&gt;              &lt;NA&gt;               &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;
-## 4231652              &lt;NA&gt;              &lt;NA&gt;               &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;
-## 4241338              &lt;NA&gt;              &lt;NA&gt;               &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;
-## 4254278              &lt;NA&gt;              &lt;NA&gt;               &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;
-## 4299526              &lt;NA&gt;              &lt;NA&gt;               &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;
-## 4323332              &lt;NA&gt;              &lt;NA&gt;               &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;
-## 4323338              &lt;NA&gt;              &lt;NA&gt;               &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;
-## 4360742              &lt;NA&gt;              &lt;NA&gt;               &lt;NA&gt;  &lt;NA&gt; &lt;NA&gt;  &lt;NA&gt;
-##         postal_code private  psv public_transport railway ramp ramp_speed
-## 4231647        &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;             &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4231648        &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;             &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4231651        &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;             &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4231652        &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;             &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4241338        &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;             &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4254278        &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;             &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4299526        &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;             &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4323332        &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;             &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4323338        &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;             &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-## 4360742        &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;             &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;
-##            ref reg_name restriction rollerblades rollerblading roof.direction
-## 4231647   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;         &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;
-## 4231648     99     &lt;NA&gt;        &lt;NA&gt;         &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;
-## 4231651   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;         &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;
-## 4231652   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;         &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;
-## 4241338      7     &lt;NA&gt;        &lt;NA&gt;         &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;
-## 4254278 1A;99A     &lt;NA&gt;        &lt;NA&gt;         &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;
-## 4299526   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;         &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;
-## 4323332   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;         &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;
-## 4323338   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;         &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;
-## 4360742   &lt;NA&gt;     &lt;NA&gt;        &lt;NA&gt;         &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;
-##         roof.height roof.shape route sac_scale school_zone scooter seasonal
-## 4231647        &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;
-## 4231648        &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;
-## 4231651        &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;
-## 4231652        &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;
-## 4241338        &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;
-## 4254278        &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;
-## 4299526        &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;
-## 4323332        &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;
-## 4323338        &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;
-## 4360742        &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;      &lt;NA&gt;        &lt;NA&gt;    &lt;NA&gt;     &lt;NA&gt;
-##         segregated service shop short_name shoulder sidewalk
-## 4231647       &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4231648       &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4231651       &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4231652       &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4241338       &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt; separate
-## 4254278       &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4299526       &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4323332       &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4323338       &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-## 4360742       &lt;NA&gt;    &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;     &lt;NA&gt;     &lt;NA&gt;
-##         sidewalk.both.surface sidewalk.left sidewalk.left.surface
-## 4231647                  &lt;NA&gt;          &lt;NA&gt;                  &lt;NA&gt;
-## 4231648                  &lt;NA&gt;          &lt;NA&gt;                  &lt;NA&gt;
-## 4231651                  &lt;NA&gt;          &lt;NA&gt;                  &lt;NA&gt;
-## 4231652                  &lt;NA&gt;          &lt;NA&gt;                  &lt;NA&gt;
-## 4241338                  &lt;NA&gt;          &lt;NA&gt;                  &lt;NA&gt;
-## 4254278                  &lt;NA&gt;          &lt;NA&gt;                  &lt;NA&gt;
-## 4299526                  &lt;NA&gt;          &lt;NA&gt;                  &lt;NA&gt;
-## 4323332                  &lt;NA&gt;          &lt;NA&gt;                  &lt;NA&gt;
-## 4323338                  &lt;NA&gt;          &lt;NA&gt;                  &lt;NA&gt;
-## 4360742                  &lt;NA&gt;          &lt;NA&gt;                  &lt;NA&gt;
-##         sidewalk.left.width sidewalk.right skateboard smoothness source source1
-## 4231647                &lt;NA&gt;           &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;
-## 4231648                &lt;NA&gt;           &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;
-## 4231651                &lt;NA&gt;           &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;
-## 4231652                &lt;NA&gt;           &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;
-## 4241338                &lt;NA&gt;           &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;
-## 4254278                &lt;NA&gt;           &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;
-## 4299526                &lt;NA&gt;           &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;
-## 4323332                &lt;NA&gt;           &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;
-## 4323338                &lt;NA&gt;           &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;
-## 4360742                &lt;NA&gt;           &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;    &lt;NA&gt;
-##         source.bicycle source.bridge source.highway source.location
-## 4231647           &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;            &lt;NA&gt;
-## 4231648           &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;            &lt;NA&gt;
-## 4231651           &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;            &lt;NA&gt;
-## 4231652           &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;            &lt;NA&gt;
-## 4241338           &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;            &lt;NA&gt;
-## 4254278           &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;            &lt;NA&gt;
-## 4299526           &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;            &lt;NA&gt;
-## 4323332           &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;            &lt;NA&gt;
-## 4323338           &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;            &lt;NA&gt;
-## 4360742           &lt;NA&gt;          &lt;NA&gt;           &lt;NA&gt;            &lt;NA&gt;
-##         source.maxspeed source.parking sport stairs step_count surface
-## 4231647            &lt;NA&gt;           &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt; asphalt
-## 4231648            &lt;NA&gt;           &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt; asphalt
-## 4231651            &lt;NA&gt;           &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt; asphalt
-## 4231652            &lt;NA&gt;           &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt;    &lt;NA&gt;
-## 4241338            &lt;NA&gt;           &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt; asphalt
-## 4254278            &lt;NA&gt;           &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt; asphalt
-## 4299526            &lt;NA&gt;           &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt;    &lt;NA&gt;
-## 4323332            &lt;NA&gt;           &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt; asphalt
-## 4323338            &lt;NA&gt;           &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt;    &lt;NA&gt;
-## 4360742            &lt;NA&gt;           &lt;NA&gt;  &lt;NA&gt;   &lt;NA&gt;       &lt;NA&gt;    &lt;NA&gt;
-##         swimming_pool tactile_paving tracktype traffic_calming traffic_signals
-## 4231647          &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;            &lt;NA&gt;            &lt;NA&gt;
-## 4231648          &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;            &lt;NA&gt;            &lt;NA&gt;
-## 4231651          &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;            &lt;NA&gt;            &lt;NA&gt;
-## 4231652          &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;            &lt;NA&gt;            &lt;NA&gt;
-## 4241338          &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;            &lt;NA&gt;            &lt;NA&gt;
-## 4254278          &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;            &lt;NA&gt;            &lt;NA&gt;
-## 4299526          &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;            &lt;NA&gt;            &lt;NA&gt;
-## 4323332          &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;            &lt;NA&gt;            &lt;NA&gt;
-## 4323338          &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;            &lt;NA&gt;            &lt;NA&gt;
-## 4360742          &lt;NA&gt;           &lt;NA&gt;      &lt;NA&gt;            &lt;NA&gt;            &lt;NA&gt;
-##         trail_visibility train transit.lanes trolley_wire trolleybus tunnel
-## 4231647             &lt;NA&gt;  &lt;NA&gt;          &lt;NA&gt;         &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;
-## 4231648             &lt;NA&gt;  &lt;NA&gt;          &lt;NA&gt;          yes       &lt;NA&gt;   &lt;NA&gt;
-## 4231651             &lt;NA&gt;  &lt;NA&gt;          &lt;NA&gt;         &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;
-## 4231652             &lt;NA&gt;  &lt;NA&gt;          &lt;NA&gt;         &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;
-## 4241338             &lt;NA&gt;  &lt;NA&gt;          &lt;NA&gt;          yes       &lt;NA&gt;   &lt;NA&gt;
-## 4254278             &lt;NA&gt;  &lt;NA&gt;          &lt;NA&gt;          yes       &lt;NA&gt;   &lt;NA&gt;
-## 4299526             &lt;NA&gt;  &lt;NA&gt;          &lt;NA&gt;         &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;
-## 4323332             &lt;NA&gt;  &lt;NA&gt;          &lt;NA&gt;         &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;
-## 4323338             &lt;NA&gt;  &lt;NA&gt;          &lt;NA&gt;         &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;
-## 4360742             &lt;NA&gt;  &lt;NA&gt;          &lt;NA&gt;         &lt;NA&gt;       &lt;NA&gt;   &lt;NA&gt;
-##         tunnel.name turn turn.lanes turn.lanes.backward turn.lanes.forward type
-## 4231647        &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;                &lt;NA&gt;               &lt;NA&gt; &lt;NA&gt;
-## 4231648        &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;                &lt;NA&gt;               &lt;NA&gt; &lt;NA&gt;
-## 4231651        &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;                &lt;NA&gt;               &lt;NA&gt; &lt;NA&gt;
-## 4231652        &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;                &lt;NA&gt;               &lt;NA&gt; &lt;NA&gt;
-## 4241338        &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;                &lt;NA&gt;               &lt;NA&gt; &lt;NA&gt;
-## 4254278        &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;                &lt;NA&gt;               &lt;NA&gt; &lt;NA&gt;
-## 4299526        &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;                &lt;NA&gt;               &lt;NA&gt; &lt;NA&gt;
-## 4323332        &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;                &lt;NA&gt;               &lt;NA&gt; &lt;NA&gt;
-## 4323338        &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;                &lt;NA&gt;               &lt;NA&gt; &lt;NA&gt;
-## 4360742        &lt;NA&gt; &lt;NA&gt;       &lt;NA&gt;                &lt;NA&gt;               &lt;NA&gt; &lt;NA&gt;
-##          url vehicle water website wheelchair width wikidata wikipedia
-## 4231647 &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt;      &lt;NA&gt;
-## 4231648 &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt;      &lt;NA&gt;
-## 4231651 &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt;      &lt;NA&gt;
-## 4231652 &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt;      &lt;NA&gt;
-## 4241338 &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt;      &lt;NA&gt;
-## 4254278 &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt;      &lt;NA&gt;
-## 4299526 &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt;      &lt;NA&gt;
-## 4323332 &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt;      &lt;NA&gt;
-## 4323338 &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt;      &lt;NA&gt;
-## 4360742 &lt;NA&gt;    &lt;NA&gt;  &lt;NA&gt;    &lt;NA&gt;       &lt;NA&gt;  &lt;NA&gt;     &lt;NA&gt;      &lt;NA&gt;
-##                               geometry    length
-## 4231647 LINESTRING (487783.5 545504... 675.56731
-## 4231648 LINESTRING (489796.3 545191... 785.18375
-## 4231651 LINESTRING (492986.4 545634... 384.13004
-## 4231652 LINESTRING (495520.8 545630... 408.83511
-## 4241338 LINESTRING (492368.1 545669... 139.49219
-## 4254278 LINESTRING (492654.2 545687...  37.67748
-## 4299526 LINESTRING (497162.2 545055...  12.39348
-## 4323332 LINESTRING (491801.3 545718...  37.92632
-## 4323338 LINESTRING (492373.3 545688... 584.28177
-## 4360742 LINESTRING (492939.7 545667... 442.83200</code></pre>
-<p>As you can see we can access the <code>sf</code></p>
+  coord_sf() +
+  theme_void()</code></pre>
+<p><img src="/post/kernel-density-estimation-in-network-space/index.en_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p>Check out the following link for more on the <code>stplanr</code> package <a href="https://cran.r-project.org/web/packages/stplanr/vignettes/stplanr-paper.html" class="uri">https://cran.r-project.org/web/packages/stplanr/vignettes/stplanr-paper.html</a>. For now we are only using the one function from the package to clean our network.</p>
+<div id="lixelize-the-cleaned-network" class="section level2">
+<h2>Lixelize the cleaned network</h2>
+<p>Next step is to lixelize the cleaned network. I choose a 25m maximum lixel length (e.g. every linear segment in the network will be 25m or under. This function may take some time to run.</p>
 <pre class="r"><code>lixel_list_25m &lt;- lixelize_network(
   sf_network = network_sln@sl,
   max_lixel_length = 25,
@@ -674,10 +230,28 @@ ggplot(collisions) +
 )</code></pre>
 <pre><code>## [1] &quot;Splitting input spatial lines by lixel length...&quot;
 ## [1] &quot;Create corresponding shortest distance network...&quot;</code></pre>
+<pre class="r"><code>str(lixel_list_25m)</code></pre>
+<pre><code>## List of 2
+##  $ target_lixel             :Classes &#39;sf&#39; and &#39;data.frame&#39;:  61714 obs. of  3 variables:
+##   ..$ osm_id  : chr [1:61714] &quot;4231647&quot; &quot;4231647&quot; &quot;4231647&quot; &quot;4231647&quot; ...
+##   ..$ geometry:sfc_LINESTRING of length 61714; first list element:  &#39;XY&#39; num [1:3, 1:2] 487784 487794 487807 5455047 5455043 ...
+##   ..$ LIXID   : int [1:61714] 1 2 3 4 5 6 7 8 9 10 ...
+##   ..- attr(*, &quot;sf_column&quot;)= chr &quot;geometry&quot;
+##   ..- attr(*, &quot;agr&quot;)= Factor w/ 3 levels &quot;constant&quot;,&quot;aggregate&quot;,..: NA NA
+##   .. ..- attr(*, &quot;names&quot;)= chr [1:2] &quot;osm_id&quot; &quot;LIXID&quot;
+##  $ shortest_distance_network:Classes &#39;sf&#39; and &#39;data.frame&#39;:  122986 obs. of  3 variables:
+##   ..$ osm_id  : chr [1:122986] &quot;4231647&quot; &quot;4231647&quot; &quot;4231647&quot; &quot;4231647&quot; ...
+##   ..$ geometry:sfc_LINESTRING of length 122986; first list element:  &#39;XY&#39; num [1:3, 1:2] 487784 487794 487795 5455047 5455043 ...
+##   ..$ LIXID   : int [1:122986] 1 2 3 4 5 6 7 8 9 10 ...
+##   ..- attr(*, &quot;sf_column&quot;)= chr &quot;geometry&quot;
+##   ..- attr(*, &quot;agr&quot;)= Factor w/ 3 levels &quot;constant&quot;,&quot;aggregate&quot;,..: NA NA
+##   .. ..- attr(*, &quot;names&quot;)= chr [1:2] &quot;osm_id&quot; &quot;LIXID&quot;</code></pre>
+<p>The output is a list of two <em>lixelized</em> networks. The first is the lixelized network with the specified length, and the second is the same network but with lixel lengths half the size of indicated. This is the network that will be used in the network kernel density function to calculate shortest network distances from each lixel to each event on the network. More detail on that in the following section.</p>
+</div>
 </div>
 <div id="prepare-the-point-data" class="section level1">
 <h1>Prepare the point data</h1>
-<p>Here I need to ensure that the point data are lined up with the network data in geographic space. I use a function called <code>st_snap_points</code>. The function is given below:</p>
+<p>Here I need to ensure that the point data are lined up with the cleaned network data. I use a function called <code>st_snap_points</code> which “snaps” the points to the location of the nearest road segment within a specified distance tolerance. The function is given below:</p>
 <pre class="r"><code>st_snap_points = function(x, y, max_dist = 1000) {
   
   if (inherits(x, &quot;sf&quot;)) n = nrow(x)
@@ -694,18 +268,19 @@ ggplot(collisions) +
   )
   return(out)
 }</code></pre>
-<p>We snap the points to our road network with a 20m tolerance.</p>
-<pre class="r"><code>coll_snp &lt;- st_snap_points(collisions,network_sln@sl,max_dist = 20)
+<p>We snap the points to our road network with a 20m tolerance:</p>
+<pre class="r"><code>coll_snp &lt;- st_snap_points(collisions,network_sln@sl,max_dist = 20) #this only returns the geometry - doesn&#39;t preserve attributes
+
 coll_snp &lt;- st_sf(collisions %&gt;%
                   st_drop_geometry() %&gt;%
-                  mutate(geom=coll_snp))</code></pre>
+                  mutate(geom=coll_snp)) #rerturn the attributes to the snapped locations</code></pre>
 </div>
 <div id="calculate-network-kernel-density" class="section level1">
 <h1>Calculate Network Kernel Density</h1>
-<ul>
-<li>Add more detail here</li>
-</ul>
-<pre class="r"><code>st_line_midpoints &lt;- function(sf_lines = NULL) {
+<p>The function I have created here for calculating density of events on a network follows the algorithm outline in Xie and Yan (2008) and takes advantage of functionality from <code>sf</code>, <code>igraph</code> and <code>tidygraph</code> to to calculate shortest distances from each lixel in our network to the point processes we specify. Much of the code in this function is adapted from an excellent resource on using these packages for network analysis: <a href="https://www.r-spatial.org/r/2019/09/26/spatial-networks.html" class="uri">https://www.r-spatial.org/r/2019/09/26/spatial-networks.html</a></p>
+<p>The <code>network_kde()</code> function is defined below:</p>
+<pre class="r"><code>#function for calculating the centre of 
+st_line_midpoints &lt;- function(sf_lines = NULL) {
   
   g &lt;- st_geometry(sf_lines)
   
@@ -713,7 +288,7 @@ coll_snp &lt;- st_sf(collisions %&gt;%
     
     coords &lt;- as.matrix(x)
     
-    # this is just a copypaste of View(maptools:::getMidpoints):
+    # this is just a copypaste of maptools:::getMidpoints()):
     get_mids &lt;- function (coords) {
       dist &lt;- sqrt((diff(coords[, 1])^2 + (diff(coords[, 2]))^2))
       dist_mid &lt;- sum(dist)/2
@@ -737,16 +312,7 @@ coll_snp &lt;- st_sf(collisions %&gt;%
 
 
 network_kde &lt;- function(lixel_list,point_process,bandwidth = 100,n_cores=1,attribute=1,point_process_is_lixel_midpoint=FALSE){
-  #1. Create segement base linear reference system from original road network
-
-  #Done outside function using &quot;lixelize_network&quot;
-
-  #2. Divide each segment in basic linear units of defined length (lixel_length)
-
-  #Done outside function using &quot;lixelize_network&quot;
-  #Our approach varies from Xie and Yan (2008) in that we define a &quot;maximum&quot; length for lixels, and  segments that are larger than the specified length
-  #are split into equal sized lixels. Instead of having x lixels with 1 extra &quot;residual lixel&quot; we instead have x+1 lixels of equal length, under the lixel limit
-  #E.g. a 45 lixel with a maximum lixel length of 10m  would be split into 5 segments of 9m instead of 4 lixels of 10m and a residual lixel of 5m.
+  
 
   #3. Create a network of lixels by establishing the network topology between lixels as well as between lixels and lxnodes.
 
@@ -935,15 +501,11 @@ network_kde &lt;- function(lixel_list,point_process,bandwidth = 100,n_cores=1,at
   return(list(network_kde=network_kde,neighbours = distances))
 
 }</code></pre>
-<p>Parallel computing to speed up the process - list packages and stuff</p>
-<ul>
-<li>describe parameters heren - bandwidth etc.</li>
-</ul>
-<pre class="r"><code>n_cores &lt;- bigstatsr::nb_cores()
-
-#KDE for BikeMaps incidents
-
-system.time({
+<p>As of now I have only set up the algorithm to use a quartic kernel.</p>
+<p>Next step is to compute the density of points on a network! The <code>network_kde()</code> function implements parallel computing functionality using the <code>parallel</code> and <code>doParallel</code> packages so we need to specify how many cores are on the computer being used:</p>
+<pre class="r"><code>n_cores &lt;- bigstatsr::nb_cores()</code></pre>
+<p>Finally we specify the lixelized network we are working with, the point process from which we estimate densities of events, the bandwidths we wish to use in our density estimates and the number of cores for parallel computation. The last argument can be ignored for now and set to FALSE as it is something I’m working on to speed up computation if your point process is already associated with the segment (e.g. volumes of road users on a segment).</p>
+<pre class="r"><code>system.time({
   collisions_network_kde &lt;- network_kde(lixel_list = lixel_list_25m,
                                  point_process = coll_snp,
                                  bandwidth = c(50,100,150,250),
@@ -964,9 +526,9 @@ system.time({
 ## [1] &quot;Applying kernel density estimator with bandwidth of 150m ... &quot;
 ## [1] &quot;Applying kernel density estimator with bandwidth of 250m ... &quot;</code></pre>
 <pre><code>##    user  system elapsed 
-##   98.09    1.01  165.00</code></pre>
+##   99.41    1.01  170.60</code></pre>
 <pre class="r"><code>collisions_network_kde$network_kde</code></pre>
-<pre><code>## Simple feature collection with 61763 features and 7 fields
+<pre><code>## Simple feature collection with 61714 features and 7 fields
 ## geometry type:  LINESTRING
 ## dimension:      XY
 ## bbox:           xmin: 482364.1 ymin: 5449003 xmax: 498834.3 ymax: 5463459
@@ -994,7 +556,9 @@ system.time({
 ## 8  LINESTRING (487951.5 545503... 24.1274 [m]
 ## 9  LINESTRING (487975.6 545503... 24.1274 [m]
 ## 10 LINESTRING (487999.8 545503... 24.1274 [m]</code></pre>
-<p>Here is the map of kernedl density “hotspots” for the entire city</p>
+<p>The output of the <code>network_kde()</code> is an <code>sf</code> object with <code>LINESTRING</code> geometry, where each line segment is a lixel and the columns refer to density of events in network space for the specified bandwidths.</p>
+<p>#Mapping out the results</p>
+<p>Below we can then map out the results. We will use the 150m bandwidth in this example:</p>
 <pre class="r"><code>ggplot() +
   geom_sf(data=study_area,color=NA,fill=&quot;gray5&quot;)+
   geom_sf(data = collisions_network_kde$network_kde,aes(color=kde_bw_150))+
@@ -1009,8 +573,8 @@ system.time({
         legend.key.width = unit(1.5, &#39;cm&#39;))+
   coord_sf(xlim = c(483690.9,499329.2),
            ylim = c(5450534.8,5463381.0))</code></pre>
-<p><img src="/post/kernel-density-estimation-in-network-space/index.en_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
-<p>Zoomed into downtown area</p>
+<p><img src="/post/kernel-density-estimation-in-network-space/index.en_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
+<p>Zooming into downtown:</p>
 <pre class="r"><code>ggplot() +
   geom_sf(data=study_area,color=NA,fill=&quot;gray5&quot;)+
   geom_sf(data = collisions_network_kde$network_kde,aes(color=kde_bw_150))+
@@ -1024,6 +588,21 @@ system.time({
         legend.key.width = unit(1.5, &#39;cm&#39;))+
   coord_sf(xlim = c(491321.39853389-1000,491321.39853389+1000),
            ylim = c(5459015.689874-1000,5459015.689874+1000))</code></pre>
-<p><img src="/post/kernel-density-estimation-in-network-space/index.en_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
-<p>```</p>
+<p><img src="/post/kernel-density-estimation-in-network-space/index.en_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
+<p>That’s the network KDE function as it is for now. Some challenges going forward are computation time for higher resolution pixels and implementing different kernels other than quartic.</p>
+<details>
+<p><summary>Reproducibility receipt</summary>
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+## datetime
+Sys.time()</p>
+<div id="repository" class="section level2">
+<h2>repository</h2>
+<p>git2r::repository()</p>
+</div>
+<div id="session-info" class="section level2">
+<h2>Session info</h2>
+sessionInfo()
+```
+</details>
+</div>
 </div>
