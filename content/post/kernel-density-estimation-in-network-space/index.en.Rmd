@@ -620,7 +620,7 @@ ggsave(filename = "featured.jpeg",path="D:/GitHub/website-mbc/content/post/kerne
 
 <details><summary>Reproducibility receipt</summary>
 
-```{r	echo = FALSE, message = FALSE, warning = FALSE}
+```{r,	echo = FALSE, message = FALSE, warning = FALSE}
 ## datetime
 Sys.time()
 
