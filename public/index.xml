@@ -22,6 +22,15 @@
     </item>
     
     <item>
+      <title>Tutorials</title>
+      <link>https://michaelbcalles.netlify.app/tutorials/</link>
+      <pubDate>Thu, 22 Apr 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://michaelbcalles.netlify.app/tutorials/</guid>
+      <description></description>
+    </item>
+    
+    <item>
       <title>Blog</title>
       <link>https://michaelbcalles.netlify.app/post/</link>
       <pubDate>Wed, 21 Oct 2020 00:00:00 +0000</pubDate>
@@ -36,24 +45,6 @@
       <pubDate>Wed, 02 Sep 2020 00:00:00 +0000</pubDate>
       
       <guid>https://michaelbcalles.netlify.app/publication/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Courses</title>
-      <link>https://michaelbcalles.netlify.app/courses/</link>
-      <pubDate>Sun, 05 May 2019 00:00:00 +0100</pubDate>
-      
-      <guid>https://michaelbcalles.netlify.app/courses/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Courses</title>
-      <link>https://michaelbcalles.netlify.app/tutorials/</link>
-      <pubDate>Sun, 05 May 2019 00:00:00 +0100</pubDate>
-      
-      <guid>https://michaelbcalles.netlify.app/tutorials/</guid>
       <description></description>
     </item>
     

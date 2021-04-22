@@ -2,58 +2,10 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://michaelbcalles.netlify.app/courses/example/example1/</loc>
-    <lastmod>2019-05-05T00:00:00+01:00</lastmod>
+    <loc>https://michaelbcalles.netlify.app/tutorials/example/</loc>
+    <lastmod>2021-04-22T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://michaelbcalles.netlify.app/tutorials/example/example1/</loc>
-    <lastmod>2019-05-05T00:00:00+01:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/courses/example.1/example3/</loc>
-    <lastmod>2019-05-05T00:00:00+01:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/tutorials/example.1/example3/</loc>
-    <lastmod>2019-05-05T00:00:00+01:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/courses/example.2/example3/</loc>
-    <lastmod>2019-05-05T00:00:00+01:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/tutorials/example.2/example3/</loc>
-    <lastmod>2019-05-05T00:00:00+01:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/courses/example.1/</loc>
-    <lastmod>2018-09-09T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/courses/example.2/</loc>
-    <lastmod>2018-09-09T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/courses/example/</loc>
-    <lastmod>2018-09-09T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/tutorials/example.1/</loc>
-    <lastmod>2018-09-09T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/tutorials/example.2/</loc>
-    <lastmod>2018-09-09T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/tutorials/example/</loc>
-    <lastmod>2018-09-09T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/courses/example.2/example4/</loc>
-    <lastmod>2019-05-05T00:00:00+01:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/tutorials/example.2/example4/</loc>
-    <lastmod>2019-05-05T00:00:00+01:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/courses/example/example2/</loc>
-    <lastmod>2019-05-05T00:00:00+01:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/tutorials/example/example2/</loc>
-    <lastmod>2019-05-05T00:00:00+01:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/courses/example.1/example4/</loc>
-    <lastmod>2019-05-05T00:00:00+01:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/tutorials/example.1/example4/</loc>
     <lastmod>2019-05-05T00:00:00+01:00</lastmod>
   </url><url>
     <loc>https://michaelbcalles.netlify.app/talk/coding/</loc>
@@ -70,6 +22,9 @@
   </url><url>
     <loc>https://michaelbcalles.netlify.app/talk/synthesizing/</loc>
     <lastmod>2030-06-01T13:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://michaelbcalles.netlify.app/tutorials/</loc>
+    <lastmod>2021-04-22T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://michaelbcalles.netlify.app/post/</loc>
     <lastmod>2020-10-21T00:00:00+00:00</lastmod>
@@ -208,12 +163,6 @@
   </url><url>
     <loc>https://michaelbcalles.netlify.app/tags/survey-participation/</loc>
     <lastmod>2019-12-02T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/courses/</loc>
-    <lastmod>2019-05-05T00:00:00+01:00</lastmod>
-  </url><url>
-    <loc>https://michaelbcalles.netlify.app/tutorials/</loc>
-    <lastmod>2019-05-05T00:00:00+01:00</lastmod>
   </url><url>
     <loc>https://michaelbcalles.netlify.app/publication/ibbics-bikelane-score/</loc>
     <lastmod>2019-05-01T00:00:00+00:00</lastmod>
