@@ -2,22 +2,22 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Lise Gauvine on Michael Branion-Calles</title>
-    <link>/authors/lise-gauvine/</link>
+    <link>https://michaelbcalles.netlify.app/authors/lise-gauvine/</link>
     <description>Recent content in Lise Gauvine on Michael Branion-Calles</description>
     <generator>Source Themes academia (https://sourcethemes.com/academic/)</generator>
     <language>en-us</language>
     <copyright>Copyright &amp;copy; {year}</copyright>
     <lastBuildDate>Wed, 02 Sep 2020 00:00:00 +0000</lastBuildDate>
     
-	    <atom:link href="/authors/lise-gauvine/index.xml" rel="self" type="application/rss+xml" />
+	    <atom:link href="https://michaelbcalles.netlify.app/authors/lise-gauvine/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>The Impact of Implementing Public Bicycle Share Programs on Bicycle Crashes</title>
-      <link>/publication/transport-findings/</link>
+      <link>https://michaelbcalles.netlify.app/publication/ibiccs-did/</link>
       <pubDate>Wed, 02 Sep 2020 00:00:00 +0000</pubDate>
       
-      <guid>/publication/transport-findings/</guid>
+      <guid>https://michaelbcalles.netlify.app/publication/ibiccs-did/</guid>
       <description>&lt;!-- raw HTML omitted --&gt;
 &lt;!-- raw HTML omitted --&gt;
 </description>
@@ -25,10 +25,10 @@
     
     <item>
       <title>Associations between individual characteristics, availability of bicycle infrastructure, and city-wide safety perceptions of bicycling: a cross-sectional survey of bicyclists in 6 Canadian and U.S. cities</title>
-      <link>/publication/transport-research/</link>
+      <link>https://michaelbcalles.netlify.app/publication/ibbics-bikelane-score/</link>
       <pubDate>Wed, 01 May 2019 00:00:00 +0000</pubDate>
       
-      <guid>/publication/transport-research/</guid>
+      <guid>https://michaelbcalles.netlify.app/publication/ibbics-bikelane-score/</guid>
       <description>&lt;!-- raw HTML omitted --&gt;
 &lt;!-- raw HTML omitted --&gt;
 </description>

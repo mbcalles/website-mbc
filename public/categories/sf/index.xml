@@ -1,0 +1,879 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>sf on Michael Branion-Calles</title>
+    <link>https://michaelbcalles.netlify.app/categories/sf/</link>
+    <description>Recent content in sf on Michael Branion-Calles</description>
+    <generator>Source Themes academia (https://sourcethemes.com/academic/)</generator>
+    <language>en-us</language>
+    <copyright>Copyright &amp;copy; {year}</copyright>
+    <lastBuildDate>Wed, 21 Oct 2020 00:00:00 +0000</lastBuildDate>
+    
+	    <atom:link href="https://michaelbcalles.netlify.app/categories/sf/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Rasterize Lines in R</title>
+      <link>https://michaelbcalles.netlify.app/post/rasterize-lines-in-r/</link>
+      <pubDate>Wed, 21 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://michaelbcalles.netlify.app/post/rasterize-lines-in-r/</guid>
+      <description>
+
+
+&lt;p&gt;As a part of a University level GIS course I taught I needed to generate some raster data for a lab exercise on map algebra. I wrote a function to “rasterize” polyline data I had on hand, that is, to convert the discrete polyline data to a continuous density surface. This type of operation used in things like land use regression models or in metrics of walkability or bikeability, which require all input data to be continuous surfaces. Here I develop a function to automate the process of creating such a surface in R using &lt;code&gt;sf&lt;/code&gt;, &lt;code&gt;raster&lt;/code&gt; and &lt;code&gt;tidyverse&lt;/code&gt; packages.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;rasterize_lines(input_study_area,input_linestring,cell_size=100,buffer_width=300,mask=F)&lt;/code&gt;&lt;/p&gt;
+&lt;div id=&#34;arguments&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Arguments&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;input_study_area&lt;/strong&gt;: &lt;code&gt;sf&lt;/code&gt; polygon or multipolygon&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;input_linestring&lt;/strong&gt;: &lt;code&gt;sf&lt;/code&gt; linestring or multilinestring&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;cell_size&lt;/strong&gt;: Desired spatial resolution of the output raster (i.e. in metres)&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;buffer_width&lt;/strong&gt;: Buffer length from which to calculate line densities from each raster cell centroid.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;mask&lt;/strong&gt;: If &lt;code&gt;TRUE&lt;/code&gt; then the output raster is clipped by the study area boundary. If &lt;code&gt;FALSE&lt;/code&gt; then the output raster extent is equal to bounding box of study area boundary&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div id=&#34;value&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Value&lt;/h1&gt;
+&lt;p&gt;An &lt;code&gt;RasterLayer&lt;/code&gt; file&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;explanation&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Explanation&lt;/h1&gt;
+&lt;p&gt;The function &lt;code&gt;rasterize_lines&lt;/code&gt; takes the following steps to rasterize the polylines:&lt;/p&gt;
+&lt;ol style=&#34;list-style-type: decimal&#34;&gt;
+&lt;li&gt;Create empty raster surface of specified grid cell size and study area extent&lt;/li&gt;
+&lt;li&gt;Generate buffers of specified length from the centroid of the empty raster surface&lt;/li&gt;
+&lt;li&gt;Split the polylines by the centroid buffers layer&lt;/li&gt;
+&lt;li&gt;Sum the length of polylines within each buffer in the centroid buffers layer&lt;/li&gt;
+&lt;li&gt;Assign the length within each buffer to the associated raster&lt;/li&gt;
+&lt;li&gt;Output raster where each grid cell has the value of the length of the polylines within the specified buffer length of the cell centroid&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The function is defined below:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;rasterize_lines &amp;lt;- function(input_study_area,input_linestring,cell_size=100,buffer_width=300,mask=F){
+  require(sf)
+  require(raster)
+  require(tidyverse)
+  
+  if(st_crs(input_study_area)$proj4string==st_crs(input_linestring)$proj4string){ #check that both study area and polyline files are in the same coordinate system and projection
+    
+    
+    print(&amp;quot;Generating grid...&amp;quot;)
+    #Create template raster from Study Area extent (empty raster with the extent of the study area, and cell size as indicated)
+    raster_template &amp;lt;- raster(extent(input_study_area), resolution = cell_size,
+                              crs = st_crs(input_study_area)$proj4string)
+    print(&amp;quot;Buffering grid cell centroids....&amp;quot;)
+
+    rast_point &amp;lt;- rasterToPoints(raster_template, spatial = TRUE) %&amp;gt;% 
+      st_as_sf() #create point layer from template raster based on the centroid 
+    
+    rast_point_buff &amp;lt;- st_buffer(rast_point,dist=buffer_width)#create buffers from raster cell centroids of specified width
+
+    
+    print(&amp;quot;Finding intersections between grid cell centroid buffers and input lines...&amp;quot;)
+    
+    #find intersection points between buffer boundaries and input_linestring (e.g. isolate buffers that actually intersect with polyline data)
+    rast_point_buff_ls &amp;lt;- st_cast(rast_point_buff,&amp;quot;LINESTRING&amp;quot;)
+    
+    input_linestring &amp;lt;- st_geometry(input_linestring) %&amp;gt;%
+      st_transform(crs = st_crs(rast_point_buff_ls)$proj4string)#reduce size of dataset and ensure proj4strings are the same
+    
+    int_points &amp;lt;- st_intersection(rast_point_buff_ls,input_linestring) %&amp;gt;% #find intersection of road lines and centroid buffers
+      st_cast(&amp;quot;MULTIPOINT&amp;quot;) %&amp;gt;%
+      st_cast(&amp;quot;POINT&amp;quot;)
+    
+    print(&amp;quot;Splitting input lines by intersections...&amp;quot;)
+    
+    int_points_buff &amp;lt;- st_buffer(int_points,dist = 0.0000001) %&amp;gt;% st_combine() #buffer points to very small distance
+    
+    grid &amp;lt;- st_make_grid(rast_point_buff,what = &amp;quot;polygons&amp;quot;,n = c(10,10))#split bounding box of polygon into grid
+    grid &amp;lt;- grid[st_intersects(grid,int_points_buff,sparse = F)[,1]]#remove grid cells that do not intersect with the roads
+    printPercent &amp;lt;- seq(from = 0, to = length(grid),by=(length(grid)/20))
+    
+    #iterate through each grid cell and intersect roads with grid cell, split the line geometry within that cell by the intersection buffers
+    for (i in 1:length(grid)) {
+      temp &amp;lt;- st_intersection(int_points_buff, grid[i])
+      input_linestring &amp;lt;- st_difference(input_linestring, temp)
+      
+      if (i %in% round(printPercent)) {
+        print(paste(round(i / length(grid) * 100, 0),
+                    &amp;quot;% of lines split&amp;quot;))
+      }
+    }
+    
+    print(&amp;quot;Calculating lengths of split polylines...&amp;quot;)
+    
+    input_linestring_ls &amp;lt;- input_linestring %&amp;gt;%
+      st_cast(&amp;quot;MULTILINESTRING&amp;quot;) %&amp;gt;%
+      st_cast(&amp;quot;LINESTRING&amp;quot;)#convert to linestring to isolate non-contiguous lines
+    
+    input_linestring_ls &amp;lt;-
+      st_sf(data.frame(length_m = st_length(input_linestring_ls)), geometry = input_linestring_ls) #calculate each line segment length
+    
+    print(&amp;quot;Spatially aggregating road lengths by each cell centroid buffer&amp;quot;)
+    
+    #Join to line polygons, sum line segment length within each polygon
+    rast_point_buff &amp;lt;-
+      st_sf(data.frame(ID = seq(1, length(st_geometry(rast_point_buff))),
+                       geometry = rast_point_buff)) #create sf object with the geometry of the point buffer
+    
+    rast_point_buff &amp;lt;- rast_point_buff %&amp;gt;%
+      st_join(input_linestring_ls) %&amp;gt;% #join lines split by buffer geometry and associated lengths to the buffer it falls within (e.g. points buffer is the target layer, input lines are join layer)
+      group_by(ID) %&amp;gt;%
+      summarize(line_length = sum(length_m),`.groups`=&amp;quot;drop_last&amp;quot;) %&amp;gt;%
+      mutate(line_length = replace_na(line_length, 0)) %&amp;gt;% 
+      st_set_agr(c(line_length = &amp;quot;identity&amp;quot;, ID = &amp;quot;identity&amp;quot;)) #specify attribute-geometry relationship to avoid warning since we already know line_length represents the value over the entire geometry
+    
+    rast_point_buff_cntrd &amp;lt;- st_centroid(rast_point_buff)
+    
+    output_rast = rasterize(rast_point_buff_cntrd,
+                            raster_template,
+                            field = &amp;quot;line_length&amp;quot;,
+                            fun = sum)
+    
+    if(mask==TRUE){
+      
+      output_rast &amp;lt;- mask(output_rast, as(input_study_area, &amp;quot;Spatial&amp;quot;))
+      
+      
+    }
+    
+    
+  }else{
+    &amp;quot;Input study area must be in the same projection as input lines&amp;quot;
+    
+    
+  }
+  
+    return(output_rast)
+  
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;example&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Example&lt;/h1&gt;
+&lt;p&gt;I want to map the density of seperated bikelanes in Vancouver, BC as a continuous raster surface. I have two &lt;code&gt;sf&lt;/code&gt; objects:&lt;/p&gt;
+&lt;ol style=&#34;list-style-type: decimal&#34;&gt;
+&lt;li&gt;&lt;code&gt;vancouver_boundary&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;separated_bl&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Lets take at the boundary data:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;vancouver_boundary %&amp;gt;% structure()&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Simple feature collection with 1 feature and 1 field
+## geometry type:  POLYGON
+## dimension:      XY
+## bbox:           xmin: 483690.9 ymin: 5449535 xmax: 498329.2 ymax: 5462381
+## projected CRS:  NAD83 / UTM zone 10N
+##              area                       geometry
+## 1 116255573 [m^2] POLYGON ((491475.3 5450127,...&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;ggplot(vancouver_boundary) +
+  geom_sf() + 
+  theme_bw()&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;https://michaelbcalles.netlify.app/post/rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-2-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;Lets take a look at the separated bikelane data:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;separated_bl%&amp;gt;% structure()&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Simple feature collection with 193 features and 9 fields
+## geometry type:  MULTILINESTRING
+## dimension:      XY
+## bbox:           xmin: 483723.4 ymin: 5449450 xmax: 498302.6 ymax: 5462403
+## projected CRS:  NAD83 / UTM zone 10N
+## First 10 features:
+##    UNIQUE_ID        ROUTE_NAM            STREET_NAM             TPL_TYPE STATUS
+## 1          1     Burrard Brdg        Burrard Bridge Protected Bike Lanes Active
+## 2          5   Seaside Bypass             W 2nd Ave Protected Bike Lanes Active
+## 3          7 Knight St Bridge      Knight St Bridge Protected Bike Lanes Active
+## 4          9  Laurel Overpass       Laurel Overpass Protected Bike Lanes Active
+## 5         14   South Terminal       L/S of Terminal Protected Bike Lanes Active
+## 6         19   Central Velley             E 1st Ave Protected Bike Lanes Active
+## 7         20 Knigth St Bridge On Ramp Knight Bridge Protected Bike Lanes Active
+## 8         24         Cornwall              Cornwall Protected Bike Lanes Active
+## 9         27          Pacific            Pacific St Protected Bike Lanes Active
+## 10        28          Kerr St               Kerr St Protected Bike Lanes Active
+##    LENGTH YEAR_CONST DIRECTION  STREET_TYP                       geometry
+## 1    1059       1990        NS    Arterial MULTILINESTRING ((490372 54...
+## 2     146       2009        NS    Arterial MULTILINESTRING ((491661.8 ...
+## 3     741       1990        NS    Arterial MULTILINESTRING ((494374.9 ...
+## 4     177          0        NS Residential MULTILINESTRING ((490971.9 ...
+## 5    1061       2003        EW        Lane MULTILINESTRING ((492866.9 ...
+## 6     148          0        EW Residential MULTILINESTRING ((492538.4 ...
+## 7     184       2003        NS    Arterial MULTILINESTRING ((494251.7 ...
+## 8     182       1990        NS    Arterial MULTILINESTRING ((489421.9 ...
+## 9     311       2016        EW    Arterial MULTILINESTRING ((490225.5 ...
+## 10    143       2009        NS    Arterial MULTILINESTRING ((496922.1 ...&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;ggplot(separated_bl) +
+  geom_sf() + 
+  theme_bw()&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;https://michaelbcalles.netlify.app/post/rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-3-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;Note that both &lt;code&gt;sf&lt;/code&gt; objects have the same coordinate reference system (CRS). This function needs each &lt;code&gt;sf&lt;/code&gt; object to be in the same &lt;em&gt;projected&lt;/em&gt; coordinate system.&lt;/p&gt;
+&lt;p&gt;Now I input the parameters into the &lt;code&gt;rasterize_lines()&lt;/code&gt; function. I chose a 100m by 100m cell size, and want to calculate the density of separated bikelanes within 300m of the centroid of each cell (500m buffer):&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;sep_bl_rast &amp;lt;- rasterize_lines(input_study_area = vancouver_boundary,
+                                          input_linestring = separated_bl,
+                                          cell_size = 100,
+                                          buffer_width = 200,
+                                          mask=TRUE)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] &amp;quot;Generating grid...&amp;quot;
+## [1] &amp;quot;Buffering grid cell centroids....&amp;quot;
+## [1] &amp;quot;Finding intersections between grid cell centroid buffers and input lines...&amp;quot;
+## [1] &amp;quot;Splitting input lines by intersections...&amp;quot;
+## [1] &amp;quot;5 % of lines split&amp;quot;
+## [1] &amp;quot;11 % of lines split&amp;quot;
+## [1] &amp;quot;15 % of lines split&amp;quot;
+## [1] &amp;quot;20 % of lines split&amp;quot;
+## [1] &amp;quot;25 % of lines split&amp;quot;
+## [1] &amp;quot;29 % of lines split&amp;quot;
+## [1] &amp;quot;35 % of lines split&amp;quot;
+## [1] &amp;quot;40 % of lines split&amp;quot;
+## [1] &amp;quot;45 % of lines split&amp;quot;
+## [1] &amp;quot;51 % of lines split&amp;quot;
+## [1] &amp;quot;55 % of lines split&amp;quot;
+## [1] &amp;quot;60 % of lines split&amp;quot;
+## [1] &amp;quot;65 % of lines split&amp;quot;
+## [1] &amp;quot;69 % of lines split&amp;quot;
+## [1] &amp;quot;75 % of lines split&amp;quot;
+## [1] &amp;quot;80 % of lines split&amp;quot;
+## [1] &amp;quot;85 % of lines split&amp;quot;
+## [1] &amp;quot;91 % of lines split&amp;quot;
+## [1] &amp;quot;95 % of lines split&amp;quot;
+## [1] &amp;quot;100 % of lines split&amp;quot;
+## [1] &amp;quot;Calculating lengths of split polylines...&amp;quot;
+## [1] &amp;quot;Spatially aggregating road lengths by each cell centroid buffer&amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Once the function runs the output is a &lt;code&gt;RasterLayer&lt;/code&gt; file. We can enable mapping in ggplot by converting it to a data.frame:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;sep_bl_rast_df &amp;lt;- as.data.frame(sep_bl_rast, xy = TRUE)#covert raster file to dataframe to enable mapping in ggplot&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;ggplot() +
+  geom_raster(data = sep_bl_rast_df,aes(x=x,y=y,fill=layer)) + 
+  scale_fill_viridis_c(name = &amp;quot;Separated\nBike Lane\nDensity&amp;quot;) +
+  xlab(&amp;quot;Longitude&amp;quot;) + 
+  ylab(&amp;quot;Latitude&amp;quot;) +
+  coord_equal() + 
+  theme_map() +
+  theme(legend.position=&amp;quot;bottom&amp;quot;) +
+  theme(legend.key.width=unit(2, &amp;quot;cm&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;https://michaelbcalles.netlify.app/post/rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-6-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;/div&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Kernel Density Estimation of Point Processes in Network Space in R</title>
+      <link>https://michaelbcalles.netlify.app/post/kernel-density-estimation-in-network-space/</link>
+      <pubDate>Wed, 22 Jan 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://michaelbcalles.netlify.app/post/kernel-density-estimation-in-network-space/</guid>
+      <description>
+&lt;script src=&#34;https://michaelbcalles.netlify.app/rmarkdown-libs/header-attrs/header-attrs.js&#34;&gt;&lt;/script&gt;
+
+
+&lt;p&gt;To produce kernel density estimates (KDE) of point processes in a linear network:&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\lambda(z)= \sum_{i=1}^{n} \frac{1}{\tau} k(\frac{d_{iz}}{\tau})y_i\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;Using the Quartic function:&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\lambda(z)= \sum_{i=1}^{n} \frac{1}{\tau}(\frac{3}{\pi}(1-\frac{d_{iz}^2}{\tau^2}))y_i\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;Where,&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math inline&#34;&gt;\(\lambda\)&lt;/span&gt;(z) = density at location z;&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math inline&#34;&gt;\(\tau\)&lt;/span&gt; is bandwidth linear network distance;&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math inline&#34;&gt;\(k\)&lt;/span&gt; is the kernel function, typically a function of the ratio of &lt;span class=&#34;math inline&#34;&gt;\(d_{iz}\)&lt;/span&gt; to &lt;span class=&#34;math inline&#34;&gt;\(\tau\)&lt;/span&gt;;&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math inline&#34;&gt;\(d_{iz}\)&lt;/span&gt; is the linear network distance from event &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt; to location &lt;span class=&#34;math inline&#34;&gt;\(z\)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;I wanted to implement a network-based KDE in R based on the algorithm outlined in &lt;a href=&#34;https://www.sciencedirect.com/science/article/pii/S0198971508000318&#34;&gt;Xie &amp;amp; Yan (2008)&lt;/a&gt;. The network KDE is a a 1-D version of the planar kernel density estimator, with &lt;span class=&#34;math inline&#34;&gt;\(\tau\)&lt;/span&gt; (bandwidth) based on network distances, rather than Euclidean distances and the output is based on &lt;em&gt;lixels&lt;/em&gt;, a 1-D version of pixels), rather than pixels across 2-D euclidean space.&lt;/p&gt;
+&lt;p&gt;In this post I use data from Vancouver, BC as a case study for implementing a network kernel density estimator of points in a network in R.&lt;/p&gt;
+&lt;div id=&#34;set-up&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Set Up&lt;/h1&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(tidygraph)
+library(igraph)
+library(stplanr)
+library(cancensus)
+library(osmdata)
+library(dplyr)
+library(sf)
+library(ggplot2)
+library(stringr)&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;getting-the-example-data&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Getting the example data&lt;/h1&gt;
+&lt;p&gt;The first step is to load example data.&lt;/p&gt;
+&lt;div id=&#34;study-area-extent&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Study Area Extent&lt;/h2&gt;
+&lt;p&gt;I use the &lt;code&gt;get_census&lt;/code&gt; function from the &lt;a href=&#34;https://mountainmath.github.io/cancensus/index.html&#34;&gt;&lt;code&gt;cancensus&lt;/code&gt;&lt;/a&gt; package to extract a &lt;code&gt;sf&lt;/code&gt; object with &lt;code&gt;POLYGON&lt;/code&gt; geometries, representing the study extent: the City of Vancouver.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;study_area &amp;lt;- get_census(dataset=&amp;#39;CA16&amp;#39;, regions=list(CSD=&amp;quot;5915&amp;quot;),
+                     level=&amp;#39;CSD&amp;#39;, use_cache = FALSE,geo_format = &amp;quot;sf&amp;quot;) %&amp;gt;%
+  filter(name==&amp;quot;Vancouver (CY)&amp;quot;) %&amp;gt;%
+  st_transform(crs = 26910) &lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## 
+Downloading: 7.6 kB     
+Downloading: 7.6 kB     
+Downloading: 7.6 kB     
+Downloading: 7.6 kB     
+Downloading: 24 kB     
+Downloading: 24 kB     
+Downloading: 40 kB     
+Downloading: 40 kB     
+Downloading: 40 kB     
+Downloading: 40 kB     
+Downloading: 52 kB     
+Downloading: 52 kB     
+Downloading: 52 kB     
+Downloading: 52 kB&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;ggplot(study_area) +
+  geom_sf() + 
+  coord_sf() +
+  theme_void()&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;https://michaelbcalles.netlify.app/post/kernel-density-estimation-in-network-space/index.en_files/figure-html/unnamed-chunk-3-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;road-network-data&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Road Network Data&lt;/h2&gt;
+&lt;p&gt;Next I use the &lt;code&gt;osmdata&lt;/code&gt; package to download street network files for the City of Vancouver. The &lt;code&gt;getbb()&lt;/code&gt; function defines a bounding box for the City of Vancouver.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;bbx &amp;lt;- getbb(&amp;quot;Vancouver, BC&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Next we use the &lt;code&gt;opq()&lt;/code&gt; and &lt;code&gt;add_osm_feature&lt;/code&gt; functions to obtain open street map road network data. The &lt;code&gt;osmdata_sf()&lt;/code&gt;&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;streets &amp;lt;- bbx %&amp;gt;%
+  opq()%&amp;gt;%
+  add_osm_feature(key = &amp;quot;highway&amp;quot;, 
+                  value=c(&amp;quot;residential&amp;quot;, &amp;quot;living_street&amp;quot;,
+                            &amp;quot;service&amp;quot;,&amp;quot;unclassified&amp;quot;,
+                            &amp;quot;pedestrian&amp;quot;, &amp;quot;footway&amp;quot;,
+                            &amp;quot;track&amp;quot;,&amp;quot;path&amp;quot;,&amp;quot;motorway&amp;quot;, &amp;quot;trunk&amp;quot;,
+                          &amp;quot;primary&amp;quot;,&amp;quot;secondary&amp;quot;, 
+                          &amp;quot;tertiary&amp;quot;,&amp;quot;motorway_link&amp;quot;,
+                          &amp;quot;trunk_link&amp;quot;,&amp;quot;primary_link&amp;quot;,
+                          &amp;quot;secondary_link&amp;quot;,
+                          &amp;quot;tertiary_link&amp;quot;)) %&amp;gt;%
+  osmdata_sf()
+  
+  
+streets_sf &amp;lt;- st_transform(streets$osm_lines,crs=26910) %&amp;gt;% 
+  filter(st_intersects(.,study_area,sparse=FALSE))
+
+ggplot() +
+  geom_sf(data = streets_sf,
+          aes(color=highway),
+          size = .4,
+          alpha = .65)+
+  theme_void()&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;https://michaelbcalles.netlify.app/post/kernel-density-estimation-in-network-space/index.en_files/figure-html/unnamed-chunk-5-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;police-report-data&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Police Report Data&lt;/h2&gt;
+&lt;p&gt;Finally I get point data of police reports in Vancouver from the City of Vancouver. I subset the data to only include vehicle collisions reported to police in 2018 (last full year of data available).&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;url &amp;lt;- &amp;quot;ftp://webftp.vancouver.ca/opendata/csv/crime_csv_all_years.zip&amp;quot;
+temp &amp;lt;- tempfile()
+download.file(url, temp)
+crime &amp;lt;- read.csv(unz(temp, &amp;quot;crime_csv_all_years.csv&amp;quot;))
+unlink(temp)
+
+collisions &amp;lt;- crime %&amp;gt;% 
+  filter(YEAR==2018 &amp;amp; str_detect(TYPE,&amp;quot;Vehicle Collision&amp;quot;))%&amp;gt;% 
+  st_as_sf(.,coords = c(&amp;quot;X&amp;quot;,&amp;quot;Y&amp;quot;),crs=26910)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Locations of police reported vehicle collisions are below.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;ggplot(collisions) +
+  geom_sf() + 
+  coord_sf() + 
+  theme_void()&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;https://michaelbcalles.netlify.app/post/kernel-density-estimation-in-network-space/index.en_files/figure-html/unnamed-chunk-7-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;Now we have the data we need to try and estimate the density of police-reported collisions or “hotspots” in the City of Vancouver.&lt;/p&gt;
+&lt;p&gt;NOTE: These data do not differentiate between different types of collisions between road users, and police road collision data consistently miss out on the majority of crashes that occur to active transport users (bicyclists and pedestrians).&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;prepare-the-network-data&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Prepare the network data&lt;/h1&gt;
+&lt;p&gt;In the algorithm outlined in &lt;a href=&#34;https://www.sciencedirect.com/science/article/pii/S0198971508000318&#34;&gt;Xie &amp;amp; Yan (2008)&lt;/a&gt; the resulting density estimates on a network are based on a spatial unit of analysis they term a &lt;em&gt;lixel&lt;/em&gt;. &lt;em&gt;Lixels&lt;/em&gt; are basically the 1-D version of a pixel, and refer to how long the segments in our network are from which we calculate densities of events.&lt;/p&gt;
+&lt;p&gt;To create a &lt;em&gt;lixelized&lt;/em&gt; network I combine the &lt;code&gt;split_lines()&lt;/code&gt; and the &lt;code&gt;lixelize network()&lt;/code&gt; functions.&lt;/p&gt;
+&lt;p&gt;The &lt;code&gt;split_lines()&lt;/code&gt; function has three arguments:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;input_lines&lt;/strong&gt;: &lt;code&gt;sf&lt;/code&gt; object with &lt;code&gt;LINSETRING&lt;/code&gt; or &lt;code&gt;MULTILINESTRING&lt;/code&gt; geometry&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;max_length&lt;/strong&gt;: the &lt;em&gt;lixel&lt;/em&gt; size, defined by the maximum length of an individual linestring in the data.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;id&lt;/strong&gt;: a unique id for each line segment in the &lt;code&gt;sf&lt;/code&gt; object&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The &lt;code&gt;split_lines()&lt;/code&gt; function is given below:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;split_lines &amp;lt;- function(input_lines, max_length, id) {
+
+  input_lines &amp;lt;- input_lines %&amp;gt;% ungroup()
+
+  geom_column &amp;lt;- attr(input_lines, &amp;quot;sf_column&amp;quot;)
+
+  input_crs &amp;lt;- sf::st_crs(input_lines)
+
+  input_lines[[&amp;quot;geom_len&amp;quot;]] &amp;lt;- sf::st_length(input_lines[[geom_column]])
+
+  attr(input_lines[[&amp;quot;geom_len&amp;quot;]], &amp;quot;units&amp;quot;) &amp;lt;- NULL
+  input_lines[[&amp;quot;geom_len&amp;quot;]] &amp;lt;- as.numeric(input_lines[[&amp;quot;geom_len&amp;quot;]])
+
+  too_short &amp;lt;- filter(select(all_of(input_lines),all_of(id), all_of(geom_column), geom_len), geom_len &amp;lt; max_length) %&amp;gt;% select(-geom_len)
+
+  too_long &amp;lt;- filter(select(all_of(input_lines),all_of(id), all_of(geom_column), geom_len), geom_len &amp;gt;= max_length)
+
+  rm(input_lines) # just to control memory usage in case this is big.
+
+  too_long &amp;lt;- mutate(too_long,
+                     pieces = ceiling(geom_len / max_length),
+                     fID = 1:nrow(too_long)) %&amp;gt;%
+    select(-geom_len)
+
+  split_points &amp;lt;- sf::st_set_geometry(too_long, NULL)[rep(seq_len(nrow(too_long)), too_long[[&amp;quot;pieces&amp;quot;]]),] %&amp;gt;%
+    select(-pieces)
+
+  split_points &amp;lt;- mutate(split_points, split_fID = row.names(split_points)) %&amp;gt;%
+    group_by(fID) %&amp;gt;%
+    mutate(piece = 1:n()) %&amp;gt;%
+    mutate(start = (piece - 1) / n(),
+           end = piece / n()) %&amp;gt;%
+    ungroup()
+
+  new_line &amp;lt;- function(i, f, t) {
+    lwgeom::st_linesubstring(x = too_long[[geom_column]][i], from = f, to = t)[[1]]
+  }
+
+  split_lines &amp;lt;- apply(split_points[c(&amp;quot;fID&amp;quot;, &amp;quot;start&amp;quot;, &amp;quot;end&amp;quot;)], 1,
+                       function(x) new_line(i = x[[&amp;quot;fID&amp;quot;]], f = x[[&amp;quot;start&amp;quot;]], t = x[[&amp;quot;end&amp;quot;]]))
+
+  rm(too_long)
+
+  split_lines &amp;lt;- st_sf(split_points[c(id)], geometry = st_sfc(split_lines, crs = input_crs))
+
+  lixel &amp;lt;- rbind(split_lines,too_short) %&amp;gt;% mutate(LIXID = row_number())
+
+  return(lixel)
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The second function needed to prepare the network data is the &lt;code&gt;lixelize_network&lt;/code&gt; function. This takes two arguments, an &lt;code&gt;sf&lt;/code&gt; object with &lt;code&gt;LINESTRING&lt;/code&gt; or &lt;code&gt;MULTILINESTRING&lt;/code&gt; geometry and the lixel_length argument. This function will create two lixelized networks: 1) the output network where the line data are &lt;em&gt;lixelized&lt;/em&gt; and no segment is larger than the a given pixel size and 2) a shortest distance network which will be used to calculate road network lengths in our network kernel density estimates that we will dive into shortly.&lt;/p&gt;
+&lt;p&gt;The lixelize network function is given below:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;lixelize_network &amp;lt;- function(sf_network,max_lixel_length,uid){
+  print(&amp;quot;Splitting input spatial lines by lixel length...&amp;quot;)
+  target_lixel &amp;lt;- split_lines(input_lines = sf_network,max_length = max_lixel_length,id = uid)
+  print(&amp;quot;Create corresponding shortest distance network...&amp;quot;)
+  shortest_distance_network &amp;lt;- split_lines(input_lines = target_lixel,max_length = max_lixel_length/2,id = uid)
+  return(list(target_lixel=target_lixel,shortest_distance_network=shortest_distance_network))
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Our approach varies from Xie and Yan (2008) in that we define a “maximum” length for lixels based on the &lt;code&gt;split_lines()&lt;/code&gt; function, and segments that are larger than the specified length are split into equal sized lixels. Instead of having &lt;span class=&#34;math inline&#34;&gt;\(n\)&lt;/span&gt; lixels with 1 extra “residual lixel” we instead have &lt;span class=&#34;math inline&#34;&gt;\(n\)&lt;/span&gt;+1 lixels of equal length, under the lixel limit. For example a 45m segment with a maximum lixel length of 10m would be split into 5 segments of 9m instead of 4 lixels of 10m and a residual lixel of 5m.&lt;/p&gt;
+&lt;p&gt;Before we use the functions described above to create a network of basic linear units &lt;em&gt;under&lt;/em&gt; a maximum length (e.g. &lt;em&gt;lixelized&lt;/em&gt; network), we will clean our existing osm data by removing unconnected segments of roads using the &lt;code&gt;stplanr&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;First we convert our &lt;code&gt;sf&lt;/code&gt; road network to a spatial lines network object using the &lt;code&gt;SpatialLinesNetwork()&lt;/code&gt; function, then clean use the &lt;code&gt;sln_clean_graph()&lt;/code&gt; function to keep the largest set of connected road segments within our dataset.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;network_sln &amp;lt;- SpatialLinesNetwork(streets_sf)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Warning in SpatialLinesNetwork.sf(streets_sf): Graph composed of multiple
+## subgraphs, consider cleaning it with sln_clean_graph().&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;network_sln &amp;lt;- sln_clean_graph(network_sln)# Remove unconnected roads&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Input sln composed of 8750 graphs. Selecting the largest.&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;ggplot(network_sln@sl) +
+  geom_sf() + 
+  coord_sf() +
+  theme_void()&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;https://michaelbcalles.netlify.app/post/kernel-density-estimation-in-network-space/index.en_files/figure-html/unnamed-chunk-10-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;Check out the following link for more on the &lt;code&gt;stplanr&lt;/code&gt; package &lt;a href=&#34;https://cran.r-project.org/web/packages/stplanr/vignettes/stplanr-paper.html&#34; class=&#34;uri&#34;&gt;https://cran.r-project.org/web/packages/stplanr/vignettes/stplanr-paper.html&lt;/a&gt;. For now we are only using the one function from the package to clean our network.&lt;/p&gt;
+&lt;div id=&#34;lixelize-the-cleaned-network&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Lixelize the cleaned network&lt;/h2&gt;
+&lt;p&gt;Next step is to lixelize the cleaned network. I choose a 25m maximum lixel length (e.g. every linear segment in the network will be 25m or under. This function may take some time to run.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;lixel_list_25m &amp;lt;- lixelize_network(
+  sf_network = network_sln@sl,
+  max_lixel_length = 25,
+  uid = &amp;quot;osm_id&amp;quot;
+    
+)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] &amp;quot;Splitting input spatial lines by lixel length...&amp;quot;
+## [1] &amp;quot;Create corresponding shortest distance network...&amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;str(lixel_list_25m)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## List of 2
+##  $ target_lixel             :Classes &amp;#39;sf&amp;#39; and &amp;#39;data.frame&amp;#39;:  60217 obs. of  3 variables:
+##   ..$ osm_id  : chr [1:60217] &amp;quot;4231647&amp;quot; &amp;quot;4231647&amp;quot; &amp;quot;4231647&amp;quot; &amp;quot;4231647&amp;quot; ...
+##   ..$ geometry:sfc_LINESTRING of length 60217; first list element:  &amp;#39;XY&amp;#39; num [1:3, 1:2] 487784 487794 487807 5455047 5455043 ...
+##   ..$ LIXID   : int [1:60217] 1 2 3 4 5 6 7 8 9 10 ...
+##   ..- attr(*, &amp;quot;sf_column&amp;quot;)= chr &amp;quot;geometry&amp;quot;
+##   ..- attr(*, &amp;quot;agr&amp;quot;)= Factor w/ 3 levels &amp;quot;constant&amp;quot;,&amp;quot;aggregate&amp;quot;,..: NA NA
+##   .. ..- attr(*, &amp;quot;names&amp;quot;)= chr [1:2] &amp;quot;osm_id&amp;quot; &amp;quot;LIXID&amp;quot;
+##  $ shortest_distance_network:Classes &amp;#39;sf&amp;#39; and &amp;#39;data.frame&amp;#39;:  119970 obs. of  3 variables:
+##   ..$ osm_id  : chr [1:119970] &amp;quot;4231647&amp;quot; &amp;quot;4231647&amp;quot; &amp;quot;4231647&amp;quot; &amp;quot;4231647&amp;quot; ...
+##   ..$ geometry:sfc_LINESTRING of length 119970; first list element:  &amp;#39;XY&amp;#39; num [1:3, 1:2] 487784 487794 487795 5455047 5455043 ...
+##   ..$ LIXID   : int [1:119970] 1 2 3 4 5 6 7 8 9 10 ...
+##   ..- attr(*, &amp;quot;sf_column&amp;quot;)= chr &amp;quot;geometry&amp;quot;
+##   ..- attr(*, &amp;quot;agr&amp;quot;)= Factor w/ 3 levels &amp;quot;constant&amp;quot;,&amp;quot;aggregate&amp;quot;,..: NA NA
+##   .. ..- attr(*, &amp;quot;names&amp;quot;)= chr [1:2] &amp;quot;osm_id&amp;quot; &amp;quot;LIXID&amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The output is a list of two &lt;em&gt;lixelized&lt;/em&gt; networks. The first is the lixelized network with the specified length, and the second is the same network but with lixel lengths half the size of indicated. This is the network that will be used in the network kernel density function to calculate shortest network distances from each lixel to each event on the network. More detail on that in the following section.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;prepare-the-point-data&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Prepare the point data&lt;/h1&gt;
+&lt;p&gt;Here I need to ensure that the point data are lined up with the cleaned network data. I use a function called &lt;code&gt;st_snap_points&lt;/code&gt; which “snaps” the points to the location of the nearest road segment within a specified distance tolerance. The function is given below:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;st_snap_points = function(x, y, max_dist = 1000) {
+  
+  if (inherits(x, &amp;quot;sf&amp;quot;)) n = nrow(x)
+  if (inherits(x, &amp;quot;sfc&amp;quot;)) n = length(x)
+  
+  out = do.call(c,
+                lapply(seq(n), function(i) {
+                  nrst = st_nearest_points(st_geometry(x)[i], y)
+                  nrst_len = st_length(nrst)
+                  nrst_mn = which.min(nrst_len)
+                  if (as.vector(nrst_len[nrst_mn]) &amp;gt; max_dist) return(st_geometry(x)[i])
+                  return(st_cast(nrst[nrst_mn], &amp;quot;POINT&amp;quot;)[2])
+                })
+  )
+  return(out)
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We snap the points to our road network with a 20m tolerance:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;coll_snp &amp;lt;- st_snap_points(collisions,network_sln@sl,max_dist = 20) #this only returns the geometry - doesn&amp;#39;t preserve attributes
+
+coll_snp &amp;lt;- st_sf(collisions %&amp;gt;%
+                  st_drop_geometry() %&amp;gt;%
+                  mutate(geom=coll_snp)) #rerturn the attributes to the snapped locations&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;calculate-network-kernel-density&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Calculate Network Kernel Density&lt;/h1&gt;
+&lt;p&gt;The function I have created here for calculating density of events on a network follows the algorithm outline in Xie and Yan (2008) and takes advantage of functionality from &lt;code&gt;sf&lt;/code&gt;, &lt;code&gt;igraph&lt;/code&gt; and &lt;code&gt;tidygraph&lt;/code&gt; to to calculate shortest distances from each lixel in our network to the point processes we specify. Much of the code in this function is adapted from an excellent resource on using these packages for network analysis: &lt;a href=&#34;https://www.r-spatial.org/r/2019/09/26/spatial-networks.html&#34; class=&#34;uri&#34;&gt;https://www.r-spatial.org/r/2019/09/26/spatial-networks.html&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;The &lt;code&gt;network_kde()&lt;/code&gt; function is defined below:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;#function for calculating the centre of 
+st_line_midpoints &amp;lt;- function(sf_lines = NULL) {
+  
+  g &amp;lt;- st_geometry(sf_lines)
+  
+  g_mids &amp;lt;- lapply(g, function(x) {
+    
+    coords &amp;lt;- as.matrix(x)
+    
+    # this is just a copypaste of maptools:::getMidpoints()):
+    get_mids &amp;lt;- function (coords) {
+      dist &amp;lt;- sqrt((diff(coords[, 1])^2 + (diff(coords[, 2]))^2))
+      dist_mid &amp;lt;- sum(dist)/2
+      dist_cum &amp;lt;- c(0, cumsum(dist))
+      end_index &amp;lt;- which(dist_cum &amp;gt; dist_mid)[1]
+      start_index &amp;lt;- end_index - 1
+      start &amp;lt;- coords[start_index, ]
+      end &amp;lt;- coords[end_index, ]
+      dist_remaining &amp;lt;- dist_mid - dist_cum[start_index]
+      mid &amp;lt;- start + (end - start) * (dist_remaining/dist[start_index])
+      return(mid)
+    }
+    
+    mids &amp;lt;- st_point(get_mids(coords))
+  })
+  
+  out &amp;lt;- st_sfc(g_mids, crs = st_crs(sf_lines))
+  out &amp;lt;- st_sf(out)
+  out &amp;lt;- bind_cols(out,sf_lines %&amp;gt;% st_drop_geometry()) %&amp;gt;% rename(geom=out)
+}
+
+
+network_kde &amp;lt;- function(lixel_list,point_process,bandwidth = 100,n_cores=1,attribute=1,point_process_is_lixel_midpoint=FALSE){
+  
+
+  #3. Create a network of lixels by establishing the network topology between lixels as well as between lixels and lxnodes.
+
+  #Define topology for calculating shortest distances by converting lixel with half the length to calculate distances
+  #The shorter the lixel length the more accurate the calculation of network distance from nearest node of source lixel to nearest node of target lixel
+  print(&amp;quot;Defining network topology...&amp;quot;)
+  
+  require(parallel)
+  require(doParallel)
+  require(igraph)
+  require(tidygraph)
+  require(sf)  
+  require(dplyr)
+
+
+  # Create nodes at the start and end point of each edge
+
+  nodes &amp;lt;- lixel_list$shortest_distance_network %&amp;gt;%
+    st_coordinates() %&amp;gt;%
+    as_tibble() %&amp;gt;%
+    rename(LIXID = L1) %&amp;gt;%
+    group_by(LIXID) %&amp;gt;%
+    slice(c(1, n())) %&amp;gt;%
+    ungroup() %&amp;gt;%
+    mutate(start_end = rep(c(&amp;#39;start&amp;#39;, &amp;#39;end&amp;#39;), times = n()/2))
+
+  # Give each node a unique index
+
+  nodes &amp;lt;- nodes %&amp;gt;%
+    mutate(xy = paste(.$X, .$Y),
+           xy = factor(xy, levels = unique(xy))) %&amp;gt;%
+    group_by(xy)%&amp;gt;%
+    mutate(nodeID = cur_group_id()) %&amp;gt;%
+    ungroup() %&amp;gt;%
+    select(-xy)
+
+  # Combine the node indices with the edges
+
+  start_nodes &amp;lt;- nodes %&amp;gt;%
+    filter(start_end == &amp;#39;start&amp;#39;) %&amp;gt;%
+    pull(nodeID)
+
+  end_nodes &amp;lt;- nodes %&amp;gt;%
+    filter(start_end == &amp;#39;end&amp;#39;) %&amp;gt;%
+    pull(nodeID)
+
+  lixel_list$shortest_distance_network = lixel_list$shortest_distance_network %&amp;gt;%
+    mutate(from = start_nodes, to = end_nodes)
+
+  # Remove duplicate nodes
+  nodes &amp;lt;- nodes %&amp;gt;%
+    distinct(nodeID, .keep_all = TRUE) %&amp;gt;%
+    select(-c(LIXID, start_end)) %&amp;gt;%
+    st_as_sf(coords = c(&amp;#39;X&amp;#39;, &amp;#39;Y&amp;#39;)) %&amp;gt;%
+    st_set_crs(st_crs(lixel_list$shortest_distance_network))
+
+  # Convert to tbl_graph
+  graph &amp;lt;- tbl_graph(nodes = nodes, edges = as_tibble(lixel_list$shortest_distance_network), directed = FALSE)
+
+  graph &amp;lt;- graph %&amp;gt;%
+    activate(edges) %&amp;gt;%
+    mutate(length = st_length(geometry))
+
+  lixel_list$shortest_distance_network &amp;lt;- NULL
+
+  #4. Create the center points of all the lixels for the target lixel (lxcenters)
+  print(&amp;quot;Calculating lixel midpoints (lxcenters)...&amp;quot;)
+
+  lxcenters &amp;lt;- st_line_midpoints(lixel_list$target_lixel)
+
+  #5. Select a point process occurring within the road network
+
+  #input as function parameter
+
+  #6. For each point find its nearest lixel. Count the number of points nearest to a lixel and assigned as property of lixel.
+
+  #Points should be snapped to network within some distance threshold prior to
+
+  if(point_process_is_lixel_midpoint==FALSE){
+
+  print(&amp;quot;Counting number of events on each lixel...&amp;quot;)
+
+  point_process &amp;lt;- st_join(point_process,lixel_list$target_lixel[&amp;quot;LIXID&amp;quot;],
+                           join = st_is_within_distance, dist = 0.001) #for each point assign the LIXID that it falls on
+
+  source_lixels &amp;lt;- point_process %&amp;gt;% #summarize the number of points by LIXID (e.g. count the points for each LIXID)
+    filter(!is.na(LIXID)) %&amp;gt;%
+    group_by(LIXID) %&amp;gt;%
+    summarise(n_events = n(),`.groups`=&amp;quot;drop&amp;quot;) %&amp;gt;%
+    st_drop_geometry()
+
+  source_lixels &amp;lt;- inner_join(lxcenters,source_lixels,by=&amp;quot;LIXID&amp;quot;) #define geometry for source lixels
+  }
+
+  if(point_process_is_lixel_midpoint==TRUE){
+
+    source_lixels &amp;lt;- lxcenters %&amp;gt;% mutate(n_events = 1)
+  }
+
+  print(paste0(sum(source_lixels$n_events),&amp;quot; events on &amp;quot;,nrow(source_lixels),&amp;quot; source lixels&amp;quot;))
+
+  #7. Define a search bandwidth, measured with the short path network distance
+
+  #input as function parameter
+
+  #8. Calculate the shortest-path network distance from each source lixel to lxcenter of all its neighouring lixels within the seach bandwidth
+
+
+  nearest_node_to_source_lixel &amp;lt;- st_nearest_feature(source_lixels,nodes)#find nodes from shortest distance network associated with each source lixel
+  nearest_node_to_lxcentre &amp;lt;- st_nearest_feature(lxcenters,nodes)#find nodes from shortest distance network associated with each lxcenters
+
+  print(&amp;quot;Calculating distances from each source lixel to all other lixel centers... &amp;quot;)
+  
+
+  cl &amp;lt;- makeCluster(n_cores)
+  registerDoParallel(cores=cl) #parallel computing
+
+  distances &amp;lt;- foreach::foreach(i = 1:length(nearest_node_to_source_lixel),.packages = c(&amp;quot;magrittr&amp;quot;,&amp;quot;igraph&amp;quot;,&amp;quot;tidygraph&amp;quot;,&amp;quot;sf&amp;quot;)) %dopar% {
+    temp &amp;lt;- distances(
+      graph = graph,
+      weights = graph %&amp;gt;% activate(edges) %&amp;gt;% pull(length),
+      v = nearest_node_to_source_lixel[i]
+    )[,nearest_node_to_lxcentre]
+
+    data.frame(LIXID = lxcenters[temp&amp;lt;=max(bandwidth),]$LIXID,
+               dist = temp[temp&amp;lt;=max(bandwidth)])
+  }
+
+ stopCluster(cl)
+
+  rm(&amp;quot;graph&amp;quot;)
+
+
+  # gauss &amp;lt;-function(x) {
+  #
+  #   t1 &amp;lt;- 1/(sqrt(2*pi))
+  #   t2 &amp;lt;- exp(-((x^2)/(2*bandwidth^2)))
+  #   n &amp;lt;- (1/bandwidth)*(t1*t2)
+  #   n &amp;lt;- ifelse(x&amp;gt;bandwidth,0,n)
+  #
+  #
+  #   return(n)
+  #
+  # }
+  #
+  # plot(gauss(0:(bandwidth*2)))
+
+  quartic &amp;lt;-function(x,r) {
+    K &amp;lt;- 3/pi
+    t1 &amp;lt;- 1-(x^2/r^2)
+    q &amp;lt;- ifelse(x&amp;gt;r,0,K*t1)
+    q &amp;lt;- (1/r)*q
+
+    return(q)
+  }
+
+  LIXID &amp;lt;- unlist(lapply(lapply(distances,`[`,&amp;quot;LIXID&amp;quot;),function(x) pull(x)))
+  distances_list &amp;lt;- lapply(lapply(distances,`[`,&amp;quot;dist&amp;quot;),function(x) pull(x))
+
+  d_list &amp;lt;- list()
+
+  for(i in 1:length(bandwidth)){
+
+    print(paste0(&amp;quot;Applying kernel density estimator with bandwidth of &amp;quot;,bandwidth[i],&amp;quot;m ... &amp;quot;))
+
+    d &amp;lt;- lapply(distances_list,function(x) quartic(x,bandwidth[i]))
+    d &amp;lt;- mapply(`*`,d,attribute) #multiply by attribute of source lixel
+    d &amp;lt;- mapply(`*`,d,source_lixels$n_events) #sum over number of events that occured on the source lixel
+
+    d_list[[i]] &amp;lt;- data.frame(unlist(d))
+  }
+
+  d_cols &amp;lt;- as.data.frame(do.call(cbind,d_list))
+
+  names(d_cols) &amp;lt;- paste0(&amp;quot;kde_bw_&amp;quot;,bandwidth)
+
+  #sum densities over all lixels
+  density &amp;lt;- cbind(LIXID,d_cols) %&amp;gt;%
+    group_by(LIXID) %&amp;gt;%
+    summarise(across(everything(),sum),`.groups`=&amp;quot;drop&amp;quot;)
+
+  network_kde &amp;lt;- left_join(lixel_list$target_lixel,density,by = &amp;quot;LIXID&amp;quot;) %&amp;gt;%
+    mutate(length = st_length(.)) %&amp;gt;%
+    replace(., is.na(.), 0)
+
+  return(list(network_kde=network_kde,neighbours = distances))
+
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;As of now I have only set up the algorithm to use a quartic kernel.&lt;/p&gt;
+&lt;p&gt;Next step is to compute the density of points on a network! The &lt;code&gt;network_kde()&lt;/code&gt; function implements parallel computing functionality using the &lt;code&gt;parallel&lt;/code&gt; and &lt;code&gt;doParallel&lt;/code&gt; packages so we need to specify how many cores are on the computer being used:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;n_cores &amp;lt;- bigstatsr::nb_cores()&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Finally we specify the lixelized network we are working with, the point process from which we estimate densities of events, the bandwidths we wish to use in our density estimates and the number of cores for parallel computation. The last argument can be ignored for now and set to FALSE as it is something I’m working on to speed up computation if your point process is already associated with the segment (e.g. volumes of road users on a segment).&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;system.time({
+  collisions_network_kde &amp;lt;- network_kde(lixel_list = lixel_list_25m,
+                                 point_process = coll_snp,
+                                 bandwidth = c(50,100,150,250),
+                                 n_cores = n_cores,
+                                 point_process_is_lixel_midpoint = FALSE)
+})&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] &amp;quot;Defining network topology...&amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: parallel&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: doParallel&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: foreach&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Loading required package: iterators&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] &amp;quot;Calculating lixel midpoints (lxcenters)...&amp;quot;
+## [1] &amp;quot;Counting number of events on each lixel...&amp;quot;
+## [1] &amp;quot;1462 events on 1037 source lixels&amp;quot;
+## [1] &amp;quot;Calculating distances from each source lixel to all other lixel centers... &amp;quot;
+## [1] &amp;quot;Applying kernel density estimator with bandwidth of 50m ... &amp;quot;
+## [1] &amp;quot;Applying kernel density estimator with bandwidth of 100m ... &amp;quot;
+## [1] &amp;quot;Applying kernel density estimator with bandwidth of 150m ... &amp;quot;
+## [1] &amp;quot;Applying kernel density estimator with bandwidth of 250m ... &amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;##    user  system elapsed 
+##  102.72    1.10  177.43&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;collisions_network_kde$network_kde&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Simple feature collection with 60217 features and 7 fields
+## geometry type:  LINESTRING
+## dimension:      XY
+## bbox:           xmin: 482364.1 ymin: 5449003 xmax: 498834.3 ymax: 5463459
+## projected CRS:  NAD83 / UTM zone 10N
+## First 10 features:
+##     osm_id LIXID   kde_bw_50  kde_bw_100   kde_bw_150  kde_bw_250
+## 1  4231647     1 0.015901514 0.009149662 0.0062477874 0.003794142
+## 2  4231647     2 0.003913026 0.007651101 0.0058037693 0.003698234
+## 3  4231647     3 0.000000000 0.005040750 0.0050303321 0.003531172
+## 4  4231647     4 0.000000000 0.001318610 0.0039274758 0.003292955
+## 5  4231647     5 0.000000000 0.000000000 0.0024952004 0.002983583
+## 6  4231647     6 0.000000000 0.000000000 0.0007335059 0.002865049
+## 7  4231647     7 0.000000000 0.000000000 0.0000000000 0.003089337
+## 8  4231647     8 0.000000000 0.000000000 0.0000000000 0.003171315
+## 9  4231647     9 0.000000000 0.000000000 0.0000000000 0.003110985
+## 10 4231647    10 0.000000000 0.000000000 0.0004366537 0.002908345
+##                          geometry      length
+## 1  LINESTRING (487783.5 545504... 24.1274 [m]
+## 2  LINESTRING (487806.9 545504... 24.1274 [m]
+## 3  LINESTRING (487830.9 545503... 24.1274 [m]
+## 4  LINESTRING (487855 5455038,... 24.1274 [m]
+## 5  LINESTRING (487879.1 545503... 24.1274 [m]
+## 6  LINESTRING (487903.2 545503... 24.1274 [m]
+## 7  LINESTRING (487927.4 545503... 24.1274 [m]
+## 8  LINESTRING (487951.5 545503... 24.1274 [m]
+## 9  LINESTRING (487975.6 545503... 24.1274 [m]
+## 10 LINESTRING (487999.8 545503... 24.1274 [m]&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The output of the &lt;code&gt;network_kde()&lt;/code&gt; is an &lt;code&gt;sf&lt;/code&gt; object with &lt;code&gt;LINESTRING&lt;/code&gt; geometry, where each line segment is a lixel and the columns refer to density of events in network space for the specified bandwidths.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;mapping-out-the-results&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Mapping out the results&lt;/h1&gt;
+&lt;p&gt;Below we can then map out the results. We will use the 150m bandwidth in this example:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;ggplot() +
+  geom_sf(data=study_area,color=NA,fill=&amp;quot;gray5&amp;quot;)+
+  geom_sf(data = collisions_network_kde$network_kde,aes(color=kde_bw_150))+
+  scale_color_viridis_c(option = &amp;quot;C&amp;quot;,direction = 1,name=&amp;quot;Density&amp;quot;) + 
+  # geom_sf(data=mask,color=NA,fill=&amp;quot;white&amp;quot;)+
+  theme_void()+
+  theme(panel.background= element_rect(fill = NA,color=NA),
+        legend.position = &amp;quot;top&amp;quot;,
+        legend.title.align = 0,
+        legend.key.size = unit(1, &amp;#39;cm&amp;#39;), #change legend key size
+        legend.key.height = unit(0.5, &amp;#39;cm&amp;#39;), #change legend key height
+        legend.key.width = unit(1.5, &amp;#39;cm&amp;#39;))+
+  coord_sf(xlim = c(483690.9,499329.2),
+           ylim = c(5450534.8,5463381.0))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;https://michaelbcalles.netlify.app/post/kernel-density-estimation-in-network-space/index.en_files/figure-html/unnamed-chunk-17-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;Zooming into downtown:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;ggplot() +
+  geom_sf(data=study_area,color=NA,fill=&amp;quot;gray5&amp;quot;)+
+  geom_sf(data = collisions_network_kde$network_kde,aes(color=kde_bw_150))+
+  scale_color_viridis_c(option = &amp;quot;C&amp;quot;,direction = 1,name=&amp;quot;Density&amp;quot;) + 
+  theme_void()+
+  theme(panel.background= element_rect(fill = NA,color=NA),
+        legend.position = &amp;quot;top&amp;quot;,
+        legend.title.align = 0,
+        legend.key.size = unit(1, &amp;#39;cm&amp;#39;), #change legend key size
+        legend.key.height = unit(0.5, &amp;#39;cm&amp;#39;), #change legend key height
+        legend.key.width = unit(1.5, &amp;#39;cm&amp;#39;))+
+  coord_sf(xlim = c(491321.39853389-1000,491321.39853389+1000),
+           ylim = c(5459015.689874-1000,5459015.689874+1000))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;https://michaelbcalles.netlify.app/post/kernel-density-estimation-in-network-space/index.en_files/figure-html/unnamed-chunk-18-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;That’s the network KDE function as it is for now. Some challenges going forward are computation time for higher resolution pixels and implementing different kernels other than quartic.&lt;/p&gt;
+&lt;details&gt;
+&lt;summary&gt;
+Reproducibility receipt
+&lt;/summary&gt;
+&lt;pre&gt;&lt;code&gt;## [1] &amp;quot;2021-01-22 15:18:01 PST&amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Local:    main D:/GitHub/website-mbc
+## Remote:   main @ origin (https://github.com/mbcalles/website-mbc.git)
+## Head:     [89d6e85] 2020-10-27: Delete 092g01_e.dem&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## R version 4.0.3 (2020-10-10)
+## Platform: x86_64-w64-mingw32/x64 (64-bit)
+## Running under: Windows 10 x64 (build 19041)
+## 
+## Matrix products: default
+## 
+## locale:
+## [1] LC_COLLATE=English_Canada.1252  LC_CTYPE=English_Canada.1252   
+## [3] LC_MONETARY=English_Canada.1252 LC_NUMERIC=C                   
+## [5] LC_TIME=English_Canada.1252    
+## 
+## attached base packages:
+## [1] parallel  stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
+## 
+## other attached packages:
+##  [1] doParallel_1.0.16 iterators_1.0.13  foreach_1.5.1     stringr_1.4.0    
+##  [5] ggplot2_3.3.2     sf_0.9-6          dplyr_1.0.2       osmdata_0.1.3    
+##  [9] cancensus_0.3.2   stplanr_0.7.2     igraph_1.2.6      tidygraph_1.2.0  
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_1.0.5         lubridate_1.7.9.2  lattice_0.20-41    tidyr_1.1.2       
+##  [5] class_7.3-17       digest_0.6.27      R6_2.5.0           evaluate_0.14     
+##  [9] e1071_1.7-4        httr_1.4.2         blogdown_0.21      pillar_1.4.7      
+## [13] flock_0.7          rlang_0.4.9        curl_4.3           geosphere_1.5-10  
+## [17] raster_3.3-13      rmarkdown_2.6      labeling_0.4.2     bigparallelr_0.2.5
+## [21] foreign_0.8-80     munsell_0.5.0      compiler_4.0.3     xfun_0.18         
+## [25] pkgconfig_2.0.3    rgeos_0.5-5        htmltools_0.5.0    tidyselect_1.1.0  
+## [29] tibble_3.0.4       bigstatsr_1.2.3    bookdown_0.21      codetools_0.2-16  
+## [33] viridisLite_0.3.0  crayon_1.3.4       withr_2.3.0        grid_4.0.3        
+## [37] jsonlite_1.7.2     lwgeom_0.2-5       gtable_0.3.0       lifecycle_0.2.0   
+## [41] DBI_1.1.0          git2r_0.27.1       magrittr_2.0.1     units_0.6-7       
+## [45] scales_1.1.1       KernSmooth_2.23-17 stringi_1.5.3      farver_2.0.3      
+## [49] sp_1.4-4           xml2_1.3.2         ellipsis_0.3.1     generics_0.1.0    
+## [53] vctrs_0.3.5        cowplot_1.1.0      geojsonsf_2.0.1    tools_4.0.3       
+## [57] glue_1.4.2         purrr_0.3.4        yaml_2.2.1         colorspace_2.0-0  
+## [61] bigassertr_0.1.3   maptools_1.0-2     classInt_0.4-3     rvest_0.3.6       
+## [65] knitr_1.30&lt;/code&gt;&lt;/pre&gt;
+&lt;/details&gt;
+&lt;/div&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -2,69 +2,68 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Michael Branion-Calles</title>
-    <link>/</link>
+    <link>https://michaelbcalles.netlify.app/</link>
     <description>Recent content on Michael Branion-Calles</description>
     <generator>Source Themes academia (https://sourcethemes.com/academic/)</generator>
     <language>en-us</language>
     <copyright>Copyright &amp;copy; {year}</copyright>
     <lastBuildDate>Sat, 01 Jun 2030 13:00:00 +0000</lastBuildDate>
     
-	    <atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+	    <atom:link href="https://michaelbcalles.netlify.app/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Recent &amp; Upcoming Talks</title>
-      <link>/talk/</link>
+      <link>https://michaelbcalles.netlify.app/talk/</link>
       <pubDate>Sat, 01 Jun 2030 13:00:00 +0000</pubDate>
       
-      <guid>/talk/</guid>
+      <guid>https://michaelbcalles.netlify.app/talk/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Blog</title>
+      <link>https://michaelbcalles.netlify.app/post/</link>
+      <pubDate>Wed, 21 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://michaelbcalles.netlify.app/post/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Publications</title>
-      <link>/publication/</link>
+      <link>https://michaelbcalles.netlify.app/publication/</link>
       <pubDate>Wed, 02 Sep 2020 00:00:00 +0000</pubDate>
       
-      <guid>/publication/</guid>
+      <guid>https://michaelbcalles.netlify.app/publication/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Courses</title>
-      <link>/courses/</link>
+      <link>https://michaelbcalles.netlify.app/courses/</link>
       <pubDate>Sun, 05 May 2019 00:00:00 +0100</pubDate>
       
-      <guid>/courses/</guid>
+      <guid>https://michaelbcalles.netlify.app/courses/</guid>
       <description></description>
     </item>
     
     <item>
-      <title>Posts</title>
-      <link>/post/</link>
-      <pubDate>Tue, 05 Feb 2019 00:00:00 +0000</pubDate>
+      <title>Courses</title>
+      <link>https://michaelbcalles.netlify.app/tutorials/</link>
+      <pubDate>Sun, 05 May 2019 00:00:00 +0100</pubDate>
       
-      <guid>/post/</guid>
+      <guid>https://michaelbcalles.netlify.app/tutorials/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Slides</title>
-      <link>/slides/</link>
+      <link>https://michaelbcalles.netlify.app/slides/</link>
       <pubDate>Tue, 05 Feb 2019 00:00:00 +0000</pubDate>
       
-      <guid>/slides/</guid>
+      <guid>https://michaelbcalles.netlify.app/slides/</guid>
       <description></description>
-    </item>
-    
-    <item>
-      <title>Privacy Policy</title>
-      <link>/privacy/</link>
-      <pubDate>Thu, 28 Jun 2018 00:00:00 +0100</pubDate>
-      
-      <guid>/privacy/</guid>
-      <description>&lt;p&gt;&amp;hellip;&lt;/p&gt;
-</description>
     </item>
     
   </channel>

@@ -2,22 +2,22 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Trisalyn Nelson on Michael Branion-Calles</title>
-    <link>/authors/trisalyn-nelson/</link>
+    <link>https://michaelbcalles.netlify.app/authors/trisalyn-nelson/</link>
     <description>Recent content in Trisalyn Nelson on Michael Branion-Calles</description>
     <generator>Source Themes academia (https://sourcethemes.com/academic/)</generator>
     <language>en-us</language>
     <copyright>Copyright &amp;copy; {year}</copyright>
     <lastBuildDate>Mon, 01 Jun 2020 00:00:00 +0000</lastBuildDate>
     
-	    <atom:link href="/authors/trisalyn-nelson/index.xml" rel="self" type="application/rss+xml" />
+	    <atom:link href="https://michaelbcalles.netlify.app/authors/trisalyn-nelson/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Cyclist crash rates and risk factors in a prospective cohort in seven European cities</title>
-      <link>/publication/accident-analysis/</link>
+      <link>https://michaelbcalles.netlify.app/publication/pasta-crash/</link>
       <pubDate>Mon, 01 Jun 2020 00:00:00 +0000</pubDate>
       
-      <guid>/publication/accident-analysis/</guid>
+      <guid>https://michaelbcalles.netlify.app/publication/pasta-crash/</guid>
       <description>&lt;!-- raw HTML omitted --&gt;
 &lt;!-- raw HTML omitted --&gt;
 </description>
@@ -25,10 +25,10 @@
     
     <item>
       <title>Impacts of study design on sample size, participation bias, and outcome measurement - a case study from bicycling research</title>
-      <link>/publication/transport-health/</link>
+      <link>https://michaelbcalles.netlify.app/publication/pasta-cohort/</link>
       <pubDate>Mon, 02 Dec 2019 00:00:00 +0000</pubDate>
       
-      <guid>/publication/transport-health/</guid>
+      <guid>https://michaelbcalles.netlify.app/publication/pasta-cohort/</guid>
       <description>&lt;!-- raw HTML omitted --&gt;
 &lt;!-- raw HTML omitted --&gt;
 </description>
@@ -36,10 +36,10 @@
     
     <item>
       <title>Associations between individual characteristics, availability of bicycle infrastructure, and city-wide safety perceptions of bicycling: a cross-sectional survey of bicyclists in 6 Canadian and U.S. cities</title>
-      <link>/publication/transport-research/</link>
+      <link>https://michaelbcalles.netlify.app/publication/ibbics-bikelane-score/</link>
       <pubDate>Wed, 01 May 2019 00:00:00 +0000</pubDate>
       
-      <guid>/publication/transport-research/</guid>
+      <guid>https://michaelbcalles.netlify.app/publication/ibbics-bikelane-score/</guid>
       <description>&lt;!-- raw HTML omitted --&gt;
 &lt;!-- raw HTML omitted --&gt;
 </description>
@@ -47,10 +47,43 @@
     
     <item>
       <title>Impacts of Bicycling Infrastructure in Mid-Sized Cities (IBIMS): Protocol for a Natural Experiment Study</title>
-      <link>/publication/accident-analysis-copy/</link>
+      <link>https://michaelbcalles.netlify.app/publication/ibims/</link>
       <pubDate>Thu, 18 Jan 2018 00:00:00 +0000</pubDate>
       
-      <guid>/publication/accident-analysis-copy/</guid>
+      <guid>https://michaelbcalles.netlify.app/publication/ibims/</guid>
+      <description>&lt;!-- raw HTML omitted --&gt;
+&lt;!-- raw HTML omitted --&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Comparing Crowdsourced Near-Miss and Collision Cycling Data and Official Bike Safety Reporting</title>
+      <link>https://michaelbcalles.netlify.app/publication/bikemaps-coll-nearmiss/</link>
+      <pubDate>Sun, 01 Jan 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://michaelbcalles.netlify.app/publication/bikemaps-coll-nearmiss/</guid>
+      <description>&lt;!-- raw HTML omitted --&gt;
+&lt;!-- raw HTML omitted --&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Adjusting local alcohol consumption data for influence of tourists</title>
+      <link>https://michaelbcalles.netlify.app/publication/adjusting-local-alcohol/</link>
+      <pubDate>Wed, 16 Mar 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://michaelbcalles.netlify.app/publication/adjusting-local-alcohol/</guid>
+      <description>&lt;!-- raw HTML omitted --&gt;
+&lt;!-- raw HTML omitted --&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Evaluation of different radon guideline values based on characterization of ecological risk and visualization of lung cancer mortality trends in British Columbia, Canada</title>
+      <link>https://michaelbcalles.netlify.app/publication/radon-lung-cancer/</link>
+      <pubDate>Thu, 19 Nov 2015 00:00:00 +0000</pubDate>
+      
+      <guid>https://michaelbcalles.netlify.app/publication/radon-lung-cancer/</guid>
       <description>&lt;!-- raw HTML omitted --&gt;
 &lt;!-- raw HTML omitted --&gt;
 </description>
@@ -58,10 +91,10 @@
     
     <item>
       <title>A geospatial approach to the prediction of indoor radon vulnerability in British Columbia, Canada</title>
-      <link>/publication/exposure-science/</link>
+      <link>https://michaelbcalles.netlify.app/publication/radon-modeling/</link>
       <pubDate>Wed, 25 Mar 2015 00:00:00 +0000</pubDate>
       
-      <guid>/publication/exposure-science/</guid>
+      <guid>https://michaelbcalles.netlify.app/publication/radon-modeling/</guid>
       <description>&lt;!-- raw HTML omitted --&gt;
 &lt;!-- raw HTML omitted --&gt;
 </description>

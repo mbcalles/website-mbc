@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="generator" content="Source Themes Academia 4.3.1">
-  <meta name="generator" content="Hugo 0.75.1" />
+  <meta name="generator" content="Hugo 0.82.1" />
 
   
 
@@ -29,10 +29,10 @@
   
     
   
-  <meta name="description" content="Postdoctoral Researcher">
+  <meta name="description" content="Postdoctoral Research Fellow">
 
   
-  <link rel="alternate" hreflang="en-us" href="/categories/r/">
+  <link rel="alternate" hreflang="en-us" href="https://michaelbcalles.netlify.app/categories/r/">
 
   
 
@@ -83,7 +83,7 @@
   
   
   
-  <link rel="stylesheet" href="/css/academia.min.3343af0b0febfee7f145d924b06faaca.css">
+  <link rel="stylesheet" href="/css/academia.min.3632deb0096ca98c81e95314c5855a45.css">
 
   
 
@@ -100,7 +100,7 @@
   <link rel="icon" type="image/png" href="/img/icon.png">
   <link rel="apple-touch-icon" type="image/png" href="/img/icon-192.png">
 
-  <link rel="canonical" href="/categories/r/">
+  <link rel="canonical" href="https://michaelbcalles.netlify.app/categories/r/">
 
   
   
@@ -112,12 +112,12 @@
   <meta property="twitter:card" content="summary">
   
   <meta property="og:site_name" content="Michael Branion-Calles">
-  <meta property="og:url" content="/categories/r/">
+  <meta property="og:url" content="https://michaelbcalles.netlify.app/categories/r/">
   <meta property="og:title" content="R | Michael Branion-Calles">
-  <meta property="og:description" content="Postdoctoral Researcher"><meta property="og:image" content="/img/icon-192.png">
-  <meta property="twitter:image" content="/img/icon-192.png"><meta property="og:locale" content="en-us">
+  <meta property="og:description" content="Postdoctoral Research Fellow"><meta property="og:image" content="https://michaelbcalles.netlify.app/img/icon-192.png">
+  <meta property="twitter:image" content="https://michaelbcalles.netlify.app/img/icon-192.png"><meta property="og:locale" content="en-us">
   
-  <meta property="og:updated_time" content="2015-07-23T21:13:14-05:00">
+  <meta property="og:updated_time" content="2020-10-21T00:00:00&#43;00:00">
   
 
   
@@ -267,7 +267,58 @@
         
 
         <li class="nav-item">
+          <a class="nav-link " href="/#posts"><span>Blog</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+          
+          
+          
+            
+          
+          
+        
+
+        <li class="nav-item">
           <a class="nav-link " href="/#publications"><span>Publications</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+        
+        
+        
+        
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/tutorials/"><span>Tutorials</span></a>
         </li>
 
         
@@ -375,12 +426,28 @@
   
   
   <div>
-    <h2><a href="/post/2015-07-23-r-rmarkdown/">Hello R Markdown</a></h2>
+    <h2><a href="/post/rasterize-lines-in-r/">Rasterize Lines in R</a></h2>
     <div class="article-style">
       
-      R MarkdownThis is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see http://rmarkdown.rstudio.com.
-You can embed an R code chunk like this:
-summary(cars)## speed dist ## Min. : 4.0 Min. : 2.00 ## 1st Qu.:12.0 1st Qu.: 26.00 ## Median :15.0 Median : 36.00 ## Mean :15.4 Mean : 42.98 ## 3rd Qu.
+      As a part of a University level GIS course I taught I needed to generate some raster data for a lab exercise on map algebra. I wrote a function to “rasterize” polyline data I had on hand, that is, to convert the discrete polyline data to a continuous density surface. This type of operation used in things like land use regression models or in metrics of walkability or bikeability, which require all input data to be continuous surfaces.
+      
+    </div>
+  </div>
+  
+  <div>
+    <h2><a href="/post/kernel-density-estimation-in-network-space/">Kernel Density Estimation of Point Processes in Network Space in R</a></h2>
+    <div class="article-style">
+      
+      To produce kernel density estimates (KDE) of point processes in a linear network:
+\[\lambda(z)= \sum_{i=1}^{n} \frac{1}{\tau} k(\frac{d_{iz}}{\tau})y_i\]
+Using the Quartic function:
+\[\lambda(z)= \sum_{i=1}^{n} \frac{1}{\tau}(\frac{3}{\pi}(1-\frac{d_{iz}^2}{\tau^2}))y_i\]
+Where,
+\(\lambda\)(z) = density at location z;
+\(\tau\) is bandwidth linear network distance;
+\(k\) is the kernel function, typically a function of the ratio of \(d_{iz}\) to \(\tau\);
+\(d_{iz}\) is the linear network distance from event \(i\) to location \(z\).
+I wanted to implement a network-based KDE in R based on the algorithm outlined in Xie &amp; Yan (2008).
       
     </div>
   </div>
@@ -393,6 +460,9 @@ summary(cars)## speed dist ## Min. : 4.0 Min. : 2.00 ## 1st Qu.:12.0 1st Qu.: 2
       
 
     
+    
+    
+    <script src="/js/mathjax-config.js"></script>
     
 
     
@@ -412,6 +482,8 @@ summary(cars)## speed dist ## Min. : 4.0 Min. : 2.00 ## 1st Qu.:12.0 1st Qu.: 2
       
 
       
+      
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS_CHTML-full" integrity="sha256-GhM+5JHb6QUzOQPXSJLEWP7R73CbkisjzK5Eyij4U9w=" crossorigin="anonymous" async></script>
       
     
 
@@ -452,7 +524,7 @@ summary(cars)## speed dist ## Min. : 4.0 Min. : 2.00 ## 1st Qu.:12.0 1st Qu.: 2
     
     
     
-    <script src="/js/academia.min.7276a6a3624de715a5c7f54c7c07696d.js"></script>
+    <script src="/js/academia.min.6b5ef1defaba396582a0072fe411caca.js"></script>
 
     
 
@@ -469,12 +541,8 @@ summary(cars)## speed dist ## Min. : 4.0 Min. : 2.00 ## 1st Qu.:12.0 1st Qu.: 2
     <div class="row">
       <div class="col-md-6">
         
-        <p class="powered-by">
-          <a href="/privacy/">Privacy Policy</a>
-        </p>
-        
         <p>
-          Copyright © 2020 &middot; 
+          Copyright © 2021 &middot; 
           Powered by
           <a href="https://gethugothemes.com" target="_blank" rel="noopener">Gethugothemes</a>
         </p>

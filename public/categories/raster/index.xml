@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>raster on Michael Branion-Calles</title>
+    <link>https://michaelbcalles.netlify.app/categories/raster/</link>
+    <description>Recent content in raster on Michael Branion-Calles</description>
+    <generator>Source Themes academia (https://sourcethemes.com/academic/)</generator>
+    <language>en-us</language>
+    <copyright>Copyright &amp;copy; {year}</copyright>
+    <lastBuildDate>Wed, 21 Oct 2020 00:00:00 +0000</lastBuildDate>
+    
+	    <atom:link href="https://michaelbcalles.netlify.app/categories/raster/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Rasterize Lines in R</title>
+      <link>https://michaelbcalles.netlify.app/post/rasterize-lines-in-r/</link>
+      <pubDate>Wed, 21 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://michaelbcalles.netlify.app/post/rasterize-lines-in-r/</guid>
+      <description>
+
+
+&lt;p&gt;As a part of a University level GIS course I taught I needed to generate some raster data for a lab exercise on map algebra. I wrote a function to “rasterize” polyline data I had on hand, that is, to convert the discrete polyline data to a continuous density surface. This type of operation used in things like land use regression models or in metrics of walkability or bikeability, which require all input data to be continuous surfaces. Here I develop a function to automate the process of creating such a surface in R using &lt;code&gt;sf&lt;/code&gt;, &lt;code&gt;raster&lt;/code&gt; and &lt;code&gt;tidyverse&lt;/code&gt; packages.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;rasterize_lines(input_study_area,input_linestring,cell_size=100,buffer_width=300,mask=F)&lt;/code&gt;&lt;/p&gt;
+&lt;div id=&#34;arguments&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Arguments&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;input_study_area&lt;/strong&gt;: &lt;code&gt;sf&lt;/code&gt; polygon or multipolygon&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;input_linestring&lt;/strong&gt;: &lt;code&gt;sf&lt;/code&gt; linestring or multilinestring&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;cell_size&lt;/strong&gt;: Desired spatial resolution of the output raster (i.e. in metres)&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;buffer_width&lt;/strong&gt;: Buffer length from which to calculate line densities from each raster cell centroid.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;mask&lt;/strong&gt;: If &lt;code&gt;TRUE&lt;/code&gt; then the output raster is clipped by the study area boundary. If &lt;code&gt;FALSE&lt;/code&gt; then the output raster extent is equal to bounding box of study area boundary&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div id=&#34;value&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Value&lt;/h1&gt;
+&lt;p&gt;An &lt;code&gt;RasterLayer&lt;/code&gt; file&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;explanation&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Explanation&lt;/h1&gt;
+&lt;p&gt;The function &lt;code&gt;rasterize_lines&lt;/code&gt; takes the following steps to rasterize the polylines:&lt;/p&gt;
+&lt;ol style=&#34;list-style-type: decimal&#34;&gt;
+&lt;li&gt;Create empty raster surface of specified grid cell size and study area extent&lt;/li&gt;
+&lt;li&gt;Generate buffers of specified length from the centroid of the empty raster surface&lt;/li&gt;
+&lt;li&gt;Split the polylines by the centroid buffers layer&lt;/li&gt;
+&lt;li&gt;Sum the length of polylines within each buffer in the centroid buffers layer&lt;/li&gt;
+&lt;li&gt;Assign the length within each buffer to the associated raster&lt;/li&gt;
+&lt;li&gt;Output raster where each grid cell has the value of the length of the polylines within the specified buffer length of the cell centroid&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The function is defined below:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;rasterize_lines &amp;lt;- function(input_study_area,input_linestring,cell_size=100,buffer_width=300,mask=F){
+  require(sf)
+  require(raster)
+  require(tidyverse)
+  
+  if(st_crs(input_study_area)$proj4string==st_crs(input_linestring)$proj4string){ #check that both study area and polyline files are in the same coordinate system and projection
+    
+    
+    print(&amp;quot;Generating grid...&amp;quot;)
+    #Create template raster from Study Area extent (empty raster with the extent of the study area, and cell size as indicated)
+    raster_template &amp;lt;- raster(extent(input_study_area), resolution = cell_size,
+                              crs = st_crs(input_study_area)$proj4string)
+    print(&amp;quot;Buffering grid cell centroids....&amp;quot;)
+
+    rast_point &amp;lt;- rasterToPoints(raster_template, spatial = TRUE) %&amp;gt;% 
+      st_as_sf() #create point layer from template raster based on the centroid 
+    
+    rast_point_buff &amp;lt;- st_buffer(rast_point,dist=buffer_width)#create buffers from raster cell centroids of specified width
+
+    
+    print(&amp;quot;Finding intersections between grid cell centroid buffers and input lines...&amp;quot;)
+    
+    #find intersection points between buffer boundaries and input_linestring (e.g. isolate buffers that actually intersect with polyline data)
+    rast_point_buff_ls &amp;lt;- st_cast(rast_point_buff,&amp;quot;LINESTRING&amp;quot;)
+    
+    input_linestring &amp;lt;- st_geometry(input_linestring) %&amp;gt;%
+      st_transform(crs = st_crs(rast_point_buff_ls)$proj4string)#reduce size of dataset and ensure proj4strings are the same
+    
+    int_points &amp;lt;- st_intersection(rast_point_buff_ls,input_linestring) %&amp;gt;% #find intersection of road lines and centroid buffers
+      st_cast(&amp;quot;MULTIPOINT&amp;quot;) %&amp;gt;%
+      st_cast(&amp;quot;POINT&amp;quot;)
+    
+    print(&amp;quot;Splitting input lines by intersections...&amp;quot;)
+    
+    int_points_buff &amp;lt;- st_buffer(int_points,dist = 0.0000001) %&amp;gt;% st_combine() #buffer points to very small distance
+    
+    grid &amp;lt;- st_make_grid(rast_point_buff,what = &amp;quot;polygons&amp;quot;,n = c(10,10))#split bounding box of polygon into grid
+    grid &amp;lt;- grid[st_intersects(grid,int_points_buff,sparse = F)[,1]]#remove grid cells that do not intersect with the roads
+    printPercent &amp;lt;- seq(from = 0, to = length(grid),by=(length(grid)/20))
+    
+    #iterate through each grid cell and intersect roads with grid cell, split the line geometry within that cell by the intersection buffers
+    for (i in 1:length(grid)) {
+      temp &amp;lt;- st_intersection(int_points_buff, grid[i])
+      input_linestring &amp;lt;- st_difference(input_linestring, temp)
+      
+      if (i %in% round(printPercent)) {
+        print(paste(round(i / length(grid) * 100, 0),
+                    &amp;quot;% of lines split&amp;quot;))
+      }
+    }
+    
+    print(&amp;quot;Calculating lengths of split polylines...&amp;quot;)
+    
+    input_linestring_ls &amp;lt;- input_linestring %&amp;gt;%
+      st_cast(&amp;quot;MULTILINESTRING&amp;quot;) %&amp;gt;%
+      st_cast(&amp;quot;LINESTRING&amp;quot;)#convert to linestring to isolate non-contiguous lines
+    
+    input_linestring_ls &amp;lt;-
+      st_sf(data.frame(length_m = st_length(input_linestring_ls)), geometry = input_linestring_ls) #calculate each line segment length
+    
+    print(&amp;quot;Spatially aggregating road lengths by each cell centroid buffer&amp;quot;)
+    
+    #Join to line polygons, sum line segment length within each polygon
+    rast_point_buff &amp;lt;-
+      st_sf(data.frame(ID = seq(1, length(st_geometry(rast_point_buff))),
+                       geometry = rast_point_buff)) #create sf object with the geometry of the point buffer
+    
+    rast_point_buff &amp;lt;- rast_point_buff %&amp;gt;%
+      st_join(input_linestring_ls) %&amp;gt;% #join lines split by buffer geometry and associated lengths to the buffer it falls within (e.g. points buffer is the target layer, input lines are join layer)
+      group_by(ID) %&amp;gt;%
+      summarize(line_length = sum(length_m),`.groups`=&amp;quot;drop_last&amp;quot;) %&amp;gt;%
+      mutate(line_length = replace_na(line_length, 0)) %&amp;gt;% 
+      st_set_agr(c(line_length = &amp;quot;identity&amp;quot;, ID = &amp;quot;identity&amp;quot;)) #specify attribute-geometry relationship to avoid warning since we already know line_length represents the value over the entire geometry
+    
+    rast_point_buff_cntrd &amp;lt;- st_centroid(rast_point_buff)
+    
+    output_rast = rasterize(rast_point_buff_cntrd,
+                            raster_template,
+                            field = &amp;quot;line_length&amp;quot;,
+                            fun = sum)
+    
+    if(mask==TRUE){
+      
+      output_rast &amp;lt;- mask(output_rast, as(input_study_area, &amp;quot;Spatial&amp;quot;))
+      
+      
+    }
+    
+    
+  }else{
+    &amp;quot;Input study area must be in the same projection as input lines&amp;quot;
+    
+    
+  }
+  
+    return(output_rast)
+  
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;example&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Example&lt;/h1&gt;
+&lt;p&gt;I want to map the density of seperated bikelanes in Vancouver, BC as a continuous raster surface. I have two &lt;code&gt;sf&lt;/code&gt; objects:&lt;/p&gt;
+&lt;ol style=&#34;list-style-type: decimal&#34;&gt;
+&lt;li&gt;&lt;code&gt;vancouver_boundary&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;separated_bl&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Lets take at the boundary data:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;vancouver_boundary %&amp;gt;% structure()&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Simple feature collection with 1 feature and 1 field
+## geometry type:  POLYGON
+## dimension:      XY
+## bbox:           xmin: 483690.9 ymin: 5449535 xmax: 498329.2 ymax: 5462381
+## projected CRS:  NAD83 / UTM zone 10N
+##              area                       geometry
+## 1 116255573 [m^2] POLYGON ((491475.3 5450127,...&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;ggplot(vancouver_boundary) +
+  geom_sf() + 
+  theme_bw()&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;https://michaelbcalles.netlify.app/post/rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-2-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;Lets take a look at the separated bikelane data:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;separated_bl%&amp;gt;% structure()&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## Simple feature collection with 193 features and 9 fields
+## geometry type:  MULTILINESTRING
+## dimension:      XY
+## bbox:           xmin: 483723.4 ymin: 5449450 xmax: 498302.6 ymax: 5462403
+## projected CRS:  NAD83 / UTM zone 10N
+## First 10 features:
+##    UNIQUE_ID        ROUTE_NAM            STREET_NAM             TPL_TYPE STATUS
+## 1          1     Burrard Brdg        Burrard Bridge Protected Bike Lanes Active
+## 2          5   Seaside Bypass             W 2nd Ave Protected Bike Lanes Active
+## 3          7 Knight St Bridge      Knight St Bridge Protected Bike Lanes Active
+## 4          9  Laurel Overpass       Laurel Overpass Protected Bike Lanes Active
+## 5         14   South Terminal       L/S of Terminal Protected Bike Lanes Active
+## 6         19   Central Velley             E 1st Ave Protected Bike Lanes Active
+## 7         20 Knigth St Bridge On Ramp Knight Bridge Protected Bike Lanes Active
+## 8         24         Cornwall              Cornwall Protected Bike Lanes Active
+## 9         27          Pacific            Pacific St Protected Bike Lanes Active
+## 10        28          Kerr St               Kerr St Protected Bike Lanes Active
+##    LENGTH YEAR_CONST DIRECTION  STREET_TYP                       geometry
+## 1    1059       1990        NS    Arterial MULTILINESTRING ((490372 54...
+## 2     146       2009        NS    Arterial MULTILINESTRING ((491661.8 ...
+## 3     741       1990        NS    Arterial MULTILINESTRING ((494374.9 ...
+## 4     177          0        NS Residential MULTILINESTRING ((490971.9 ...
+## 5    1061       2003        EW        Lane MULTILINESTRING ((492866.9 ...
+## 6     148          0        EW Residential MULTILINESTRING ((492538.4 ...
+## 7     184       2003        NS    Arterial MULTILINESTRING ((494251.7 ...
+## 8     182       1990        NS    Arterial MULTILINESTRING ((489421.9 ...
+## 9     311       2016        EW    Arterial MULTILINESTRING ((490225.5 ...
+## 10    143       2009        NS    Arterial MULTILINESTRING ((496922.1 ...&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;ggplot(separated_bl) +
+  geom_sf() + 
+  theme_bw()&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;https://michaelbcalles.netlify.app/post/rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-3-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;Note that both &lt;code&gt;sf&lt;/code&gt; objects have the same coordinate reference system (CRS). This function needs each &lt;code&gt;sf&lt;/code&gt; object to be in the same &lt;em&gt;projected&lt;/em&gt; coordinate system.&lt;/p&gt;
+&lt;p&gt;Now I input the parameters into the &lt;code&gt;rasterize_lines()&lt;/code&gt; function. I chose a 100m by 100m cell size, and want to calculate the density of separated bikelanes within 300m of the centroid of each cell (500m buffer):&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;sep_bl_rast &amp;lt;- rasterize_lines(input_study_area = vancouver_boundary,
+                                          input_linestring = separated_bl,
+                                          cell_size = 100,
+                                          buffer_width = 200,
+                                          mask=TRUE)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;## [1] &amp;quot;Generating grid...&amp;quot;
+## [1] &amp;quot;Buffering grid cell centroids....&amp;quot;
+## [1] &amp;quot;Finding intersections between grid cell centroid buffers and input lines...&amp;quot;
+## [1] &amp;quot;Splitting input lines by intersections...&amp;quot;
+## [1] &amp;quot;5 % of lines split&amp;quot;
+## [1] &amp;quot;11 % of lines split&amp;quot;
+## [1] &amp;quot;15 % of lines split&amp;quot;
+## [1] &amp;quot;20 % of lines split&amp;quot;
+## [1] &amp;quot;25 % of lines split&amp;quot;
+## [1] &amp;quot;29 % of lines split&amp;quot;
+## [1] &amp;quot;35 % of lines split&amp;quot;
+## [1] &amp;quot;40 % of lines split&amp;quot;
+## [1] &amp;quot;45 % of lines split&amp;quot;
+## [1] &amp;quot;51 % of lines split&amp;quot;
+## [1] &amp;quot;55 % of lines split&amp;quot;
+## [1] &amp;quot;60 % of lines split&amp;quot;
+## [1] &amp;quot;65 % of lines split&amp;quot;
+## [1] &amp;quot;69 % of lines split&amp;quot;
+## [1] &amp;quot;75 % of lines split&amp;quot;
+## [1] &amp;quot;80 % of lines split&amp;quot;
+## [1] &amp;quot;85 % of lines split&amp;quot;
+## [1] &amp;quot;91 % of lines split&amp;quot;
+## [1] &amp;quot;95 % of lines split&amp;quot;
+## [1] &amp;quot;100 % of lines split&amp;quot;
+## [1] &amp;quot;Calculating lengths of split polylines...&amp;quot;
+## [1] &amp;quot;Spatially aggregating road lengths by each cell centroid buffer&amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Once the function runs the output is a &lt;code&gt;RasterLayer&lt;/code&gt; file. We can enable mapping in ggplot by converting it to a data.frame:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;sep_bl_rast_df &amp;lt;- as.data.frame(sep_bl_rast, xy = TRUE)#covert raster file to dataframe to enable mapping in ggplot&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;ggplot() +
+  geom_raster(data = sep_bl_rast_df,aes(x=x,y=y,fill=layer)) + 
+  scale_fill_viridis_c(name = &amp;quot;Separated\nBike Lane\nDensity&amp;quot;) +
+  xlab(&amp;quot;Longitude&amp;quot;) + 
+  ylab(&amp;quot;Latitude&amp;quot;) +
+  coord_equal() + 
+  theme_map() +
+  theme(legend.position=&amp;quot;bottom&amp;quot;) +
+  theme(legend.key.width=unit(2, &amp;quot;cm&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;https://michaelbcalles.netlify.app/post/rasterize-lines-in-r/index.en_files/figure-html/unnamed-chunk-6-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;/div&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

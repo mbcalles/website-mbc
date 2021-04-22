@@ -2,148 +2,193 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tags on Michael Branion-Calles</title>
-    <link>/tags/</link>
+    <link>https://michaelbcalles.netlify.app/tags/</link>
     <description>Recent content in Tags on Michael Branion-Calles</description>
     <generator>Source Themes academia (https://sourcethemes.com/academic/)</generator>
     <language>en-us</language>
     <copyright>Copyright &amp;copy; {year}</copyright>
     <lastBuildDate>Wed, 02 Sep 2020 00:00:00 +0000</lastBuildDate>
     
-	    <atom:link href="/tags/index.xml" rel="self" type="application/rss+xml" />
+	    <atom:link href="https://michaelbcalles.netlify.app/tags/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Active Transportation</title>
-      <link>/tags/active-transportation/</link>
+      <link>https://michaelbcalles.netlify.app/tags/active-transportation/</link>
       <pubDate>Wed, 02 Sep 2020 00:00:00 +0000</pubDate>
       
-      <guid>/tags/active-transportation/</guid>
+      <guid>https://michaelbcalles.netlify.app/tags/active-transportation/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Natural Experiment</title>
-      <link>/tags/natural-experiment/</link>
+      <link>https://michaelbcalles.netlify.app/tags/natural-experiment/</link>
       <pubDate>Wed, 02 Sep 2020 00:00:00 +0000</pubDate>
       
-      <guid>/tags/natural-experiment/</guid>
+      <guid>https://michaelbcalles.netlify.app/tags/natural-experiment/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Safety</title>
-      <link>/tags/safety/</link>
+      <link>https://michaelbcalles.netlify.app/tags/safety/</link>
       <pubDate>Wed, 02 Sep 2020 00:00:00 +0000</pubDate>
       
-      <guid>/tags/safety/</guid>
+      <guid>https://michaelbcalles.netlify.app/tags/safety/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Cohort</title>
-      <link>/tags/cohort/</link>
+      <link>https://michaelbcalles.netlify.app/tags/cohort/</link>
       <pubDate>Mon, 01 Jun 2020 00:00:00 +0000</pubDate>
       
-      <guid>/tags/cohort/</guid>
+      <guid>https://michaelbcalles.netlify.app/tags/cohort/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Bias</title>
-      <link>/tags/bias/</link>
+      <link>https://michaelbcalles.netlify.app/tags/bias/</link>
       <pubDate>Mon, 02 Dec 2019 00:00:00 +0000</pubDate>
       
-      <guid>/tags/bias/</guid>
+      <guid>https://michaelbcalles.netlify.app/tags/bias/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Cross Sectional</title>
-      <link>/tags/cross-sectional/</link>
+      <link>https://michaelbcalles.netlify.app/tags/cross-sectional/</link>
       <pubDate>Mon, 02 Dec 2019 00:00:00 +0000</pubDate>
       
-      <guid>/tags/cross-sectional/</guid>
+      <guid>https://michaelbcalles.netlify.app/tags/cross-sectional/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Exposure</title>
-      <link>/tags/exposure/</link>
+      <link>https://michaelbcalles.netlify.app/tags/exposure/</link>
       <pubDate>Mon, 02 Dec 2019 00:00:00 +0000</pubDate>
       
-      <guid>/tags/exposure/</guid>
+      <guid>https://michaelbcalles.netlify.app/tags/exposure/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Longitudinal</title>
-      <link>/tags/longitudinal/</link>
+      <link>https://michaelbcalles.netlify.app/tags/longitudinal/</link>
       <pubDate>Mon, 02 Dec 2019 00:00:00 +0000</pubDate>
       
-      <guid>/tags/longitudinal/</guid>
+      <guid>https://michaelbcalles.netlify.app/tags/longitudinal/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Study design</title>
-      <link>/tags/study-design/</link>
+      <link>https://michaelbcalles.netlify.app/tags/study-design/</link>
       <pubDate>Mon, 02 Dec 2019 00:00:00 +0000</pubDate>
       
-      <guid>/tags/study-design/</guid>
+      <guid>https://michaelbcalles.netlify.app/tags/study-design/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Survey participation</title>
-      <link>/tags/survey-participation/</link>
+      <link>https://michaelbcalles.netlify.app/tags/survey-participation/</link>
       <pubDate>Mon, 02 Dec 2019 00:00:00 +0000</pubDate>
       
-      <guid>/tags/survey-participation/</guid>
+      <guid>https://michaelbcalles.netlify.app/tags/survey-participation/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Bike score</title>
-      <link>/tags/bike-score/</link>
+      <link>https://michaelbcalles.netlify.app/tags/bike-score/</link>
       <pubDate>Wed, 01 May 2019 00:00:00 +0000</pubDate>
       
-      <guid>/tags/bike-score/</guid>
+      <guid>https://michaelbcalles.netlify.app/tags/bike-score/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Built environment</title>
-      <link>/tags/built-environment/</link>
+      <link>https://michaelbcalles.netlify.app/tags/built-environment/</link>
       <pubDate>Wed, 01 May 2019 00:00:00 +0000</pubDate>
       
-      <guid>/tags/built-environment/</guid>
+      <guid>https://michaelbcalles.netlify.app/tags/built-environment/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Perceived safety</title>
-      <link>/tags/perceived-safety/</link>
+      <link>https://michaelbcalles.netlify.app/tags/perceived-safety/</link>
       <pubDate>Wed, 01 May 2019 00:00:00 +0000</pubDate>
       
-      <guid>/tags/perceived-safety/</guid>
+      <guid>https://michaelbcalles.netlify.app/tags/perceived-safety/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Alcohol</title>
+      <link>https://michaelbcalles.netlify.app/tags/alcohol/</link>
+      <pubDate>Wed, 16 Mar 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://michaelbcalles.netlify.app/tags/alcohol/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>per capita comsumption</title>
+      <link>https://michaelbcalles.netlify.app/tags/per-capita-comsumption/</link>
+      <pubDate>Wed, 16 Mar 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://michaelbcalles.netlify.app/tags/per-capita-comsumption/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>tourists</title>
+      <link>https://michaelbcalles.netlify.app/tags/tourists/</link>
+      <pubDate>Wed, 16 Mar 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://michaelbcalles.netlify.app/tags/tourists/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Lung cancer</title>
+      <link>https://michaelbcalles.netlify.app/tags/lung-cancer/</link>
+      <pubDate>Thu, 19 Nov 2015 00:00:00 +0000</pubDate>
+      
+      <guid>https://michaelbcalles.netlify.app/tags/lung-cancer/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Prevention</title>
+      <link>https://michaelbcalles.netlify.app/tags/prevention/</link>
+      <pubDate>Thu, 19 Nov 2015 00:00:00 +0000</pubDate>
+      
+      <guid>https://michaelbcalles.netlify.app/tags/prevention/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Environmental Health</title>
-      <link>/tags/environmental-health/</link>
+      <link>https://michaelbcalles.netlify.app/tags/environmental-health/</link>
       <pubDate>Wed, 25 Mar 2015 00:00:00 +0000</pubDate>
       
-      <guid>/tags/environmental-health/</guid>
+      <guid>https://michaelbcalles.netlify.app/tags/environmental-health/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Exposure Modeling</title>
-      <link>/tags/exposure-modeling/</link>
+      <link>https://michaelbcalles.netlify.app/tags/exposure-modeling/</link>
       <pubDate>Wed, 25 Mar 2015 00:00:00 +0000</pubDate>
       
-      <guid>/tags/exposure-modeling/</guid>
+      <guid>https://michaelbcalles.netlify.app/tags/exposure-modeling/</guid>
       <description></description>
     </item>
     
