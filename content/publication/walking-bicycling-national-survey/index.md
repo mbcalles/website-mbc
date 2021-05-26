@@ -21,7 +21,7 @@ publication: '*Preventive Medicine Reports, 22* (June)'
 publication_short: ""
 publication_types:
 - "2"
-publishDate: "2021-06-01"
+publishDate: "2021-05-26"
 summary: "Canadian Community Health Survey captures more bicycling/walking than the census. Across data sources, walking more common among women than men. Men had higher risk of a fatality than women for bicycling and walking. Both data sources have key limitations for measuring bicycling and walking. Implementing a national household travel survey should be a priority in Canada."
 tags:
 - Active transportation
