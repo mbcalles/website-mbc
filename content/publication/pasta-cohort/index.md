@@ -35,7 +35,7 @@ tags:
 - Longitudinal
 - Cross Sectional
 - Study design
-title: Impacts of study design on sample size, participation bias, and outcome measurement - a case study from bicycling research
+title: "Impacts of study design on sample size, participation bias, and outcome measurement: a case study from bicycling research"
 ---
 
 {{% alert note %}}
