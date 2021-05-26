@@ -19,7 +19,7 @@ publication: '*University of Toronto Journal of Public Health, 2* (1)'
 publication_short: ""
 publication_types:
 - "2"
-publishDate: "2021-06-01"
+publishDate: "2021-05-26"
 summary: "We estimated installation of fully separated cycle tracks along one Toronto corridor would prevent approximately 152.9 injuries and 0.9 fatalities over a 10-year period."
 tags:
 - Bicycling

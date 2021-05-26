@@ -5,7 +5,7 @@ abstract: "A tutorial for learning GIS using the open source software R geared t
 authors:
 - admin
 
-date: Sys.Date()
+date: "2021-05-26" 
 doi: ""
 featured: true
 image:
@@ -17,7 +17,7 @@ publication: 'bookdown.org'
 publication_short: ""
 publication_types:
 - "5"
-publishDate:  "2021-07-02"
+publishDate:  "2021-05-26"
 summary: "A tutorial for using R as a GIS with a specific focus on applied research in transportation safety"
 tags:
 - GIS
