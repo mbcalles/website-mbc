@@ -29,10 +29,8 @@ tags:
 title: Who Bikes? An Assessment of Leisure and Commuting Bicycling from the Canadian Community Health Survey
 ---
 
-{{% alert note %}}
-Click the *Cite* button above to demo the feature to enable visitors to import publication metadata into their reference management software.
-{{% /alert %}}
+**Manuscript access:**
 
-{{% alert note %}}
-Click the *Slides* button above to demo academia's Markdown slides feature.
-{{% /alert %}}
+**DOI:** [10.32866/001c.22163](https://doi.org/10.32866/001c.22163)
+
+**PDF:** [Full text](./manuscript.pdf) 

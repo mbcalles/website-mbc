@@ -1,5 +1,5 @@
 ---
-abstract: "A tutorial for learning GIS using the open source software R geared towards applied researchers. Book is a work in progress and can be accessed [here](https://bookdown.org/michael_bcalles/gis-crash-course-in-r/)."
+abstract: "A tutorial for learning GIS using the open source software R geared towards applied researchers. The tutorial is a work in progress."
 
 
 authors:
@@ -26,11 +26,8 @@ tags:
 - Bookdown
 title: "A Crash Course in Geographic Information Systems (GIS) using R"
 ---
+**Book access:**
 
-{{% alert note %}}
-Click the *Cite* button above to demo the feature to enable visitors to import publication metadata into their reference management software.
-{{% /alert %}}
+Website: https://bookdown.org/michael_bcalles/gis-crash-course-in-r/
 
-{{% alert note %}}
-Click the *Slides* button above to demo academia's Markdown slides feature.
-{{% /alert %}}
+

@@ -30,10 +30,8 @@ tags:
 title: 'Associations between individual characteristics, availability of bicycle infrastructure, and city-wide safety perceptions of bicycling: a cross-sectional survey of bicyclists in 6 Canadian and U.S. cities'
 ---
 
-{{% alert note %}}
-Click the *Cite* button above to demo the feature to enable visitors to import publication metadata into their reference management software.
-{{% /alert %}}
+**Manuscript access:**
 
-{{% alert note %}}
-Click the *Slides* button above to demo academia's Markdown slides feature.
-{{% /alert %}}
+**DOI:** [10.1016/j.tra.2018.10.024](https://doi.org/10.1016/j.tra.2018.10.024)
+
+**PDF:** Not open access 

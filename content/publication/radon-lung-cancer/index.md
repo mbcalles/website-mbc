@@ -24,10 +24,7 @@ tags:
 title: Evaluation of different radon guideline values based on characterization of ecological risk and visualization of lung cancer mortality trends in British Columbia, Canada
 ---
 
-{{% alert note %}}
-Click the *Cite* button above to demo the feature to enable visitors to import publication metadata into their reference management software.
-{{% /alert %}}
+**DOI:** [10.1186/s12889-015-2438-2](https://doi.org/10.1186/s12889-015-2438-2)
 
-{{% alert note %}}
-Click the *Slides* button above to demo academia's Markdown slides feature.
-{{% /alert %}}
+**PDF:** [Full text](./manuscript.pdf) 
+

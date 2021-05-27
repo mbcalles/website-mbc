@@ -38,10 +38,9 @@ tags:
 title: "Impacts of study design on sample size, participation bias, and outcome measurement: a case study from bicycling research"
 ---
 
-{{% alert note %}}
-Click the *Cite* button above to demo the feature to enable visitors to import publication metadata into their reference management software.
-{{% /alert %}}
+**Manuscript access:**
 
-{{% alert note %}}
-Click the *Slides* button above to demo academia's Markdown slides feature.
-{{% /alert %}}
+**DOI:** [10.1016/j.jth.2019.100651](https://doi.org/10.1016/j.jth.2019.100651)
+
+**PDF:** Not open access 
+

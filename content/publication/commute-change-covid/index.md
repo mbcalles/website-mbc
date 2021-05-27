@@ -27,10 +27,8 @@ tags:
 title: Changes in Commute Mode Attributed to COVID-19 Risk in Canadian National Survey Data
 ---
 
-{{% alert note %}}
-Click the *Cite* button above to demo the feature to enable visitors to import publication metadata into their reference management software.
-{{% /alert %}}
+**Manuscript access:**
 
-{{% alert note %}}
-Click the *Slides* button above to demo academia's Markdown slides feature.
-{{% /alert %}}
+**DOI:** [10.32866/001c.19088](https://doi.org/10.32866/001c.19088)
+
+**PDF:** [Full text](./manuscript.pdf) 

@@ -30,10 +30,6 @@ tags:
 title: "Impacts of Bicycling Infrastructure in Mid-Sized Cities (IBIMS): Protocol for a Natural Experiment Study"
 ---
 
-{{% alert note %}}
-Click the *Cite* button above to demo the feature to enable visitors to import publication metadata into their reference management software.
-{{% /alert %}}
+**DOI:** [10.1136/bmjopen-2017-019130](https://doi.org/10.1136/bmjopen-2017-019130)
 
-{{% alert note %}}
-Click the *Slides* button above to demo academia's Markdown slides feature.
-{{% /alert %}}
+**PDF:** [Full text](./manuscript.pdf) 

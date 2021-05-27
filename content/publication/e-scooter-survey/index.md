@@ -30,10 +30,8 @@ tags:
 title: "To scoot or not to scoot: Findings from a recent survey about the benefits and barriers of using E-scooters for riders and non-rider"
 ---
 
-{{% alert note %}}
-Click the *Cite* button above to demo the feature to enable visitors to import publication metadata into their reference management software.
-{{% /alert %}}
+**Manuscript access:**
 
-{{% alert note %}}
-Click the *Slides* button above to demo academia's Markdown slides feature.
-{{% /alert %}}
+**DOI:** [10.1016/j.tra.2020.07.009](https://doi.org/10.1016/j.tra.2020.07.009)
+
+**PDF:** [Full text](./manuscript.pdf) 

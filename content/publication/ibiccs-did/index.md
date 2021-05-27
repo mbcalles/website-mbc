@@ -11,7 +11,7 @@ date: "2020-09-02"
 doi: "10.32866/001c.16724"
 featured: true
 image:
-  caption: 'Image credit: [**Photo by Daniel Adams on Unsplash**](https://unsplash.com/photos/jdD8gXaTZsc)'
+  caption: ''
   focal_point: ""
   preview_only: true
 
@@ -29,10 +29,10 @@ tags:
 title: The Impact of Implementing Public Bicycle Share Programs on Bicycle Crashes
 ---
 
-{{% alert note %}}
-Click the *Cite* button above to demo the feature to enable visitors to import publication metadata into their reference management software.
-{{% /alert %}}
 
-{{% alert note %}}
-Click the *Slides* button above to demo academia's Markdown slides feature.
-{{% /alert %}}
+**Manuscript access:**
+
+**DOI:** [10.32866/001c.16724](https://doi.org/10.32866/001c.16724)
+
+**PDF:** [Full text](./manuscript.pdf) 
+

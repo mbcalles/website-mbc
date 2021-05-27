@@ -9,16 +9,16 @@ day_night = true
 
 # Font style.
 #   Choose from `default`, `classic`, or `playfair`.
-font = "classic"
+font = "default"
 
 # Description for social sharing and search engines. If undefined, superuser role is used in place.
-description = ""
+description = "Michael Branion-Calles personal website"
 
 # Default image for social sharing and search engines. Place image in `static/img/` folder and specify image name here.
 sharing_image = ""
 
 # Twitter username (without @). Used when a vistor shares your site on Twitter.
-twitter = ""
+twitter = "mbrcalles"
 
 # Diplay a logo in navigation bar rather than title (optional).
 #   To enable, place an image in `static/img/` and reference its filename below. To disable, set the value to "".
@@ -141,7 +141,7 @@ sharing = true
   #   3: Card
   #   4: Citation (publications only)
   post_view = 3
-  publication_view = 3
+  publication_view = 4
   talk_view = 2
 
 # Search.

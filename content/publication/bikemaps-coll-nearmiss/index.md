@@ -28,10 +28,7 @@ tags:
 title: Comparing Crowdsourced Near-Miss and Collision Cycling Data and Official Bike Safety Reporting
 ---
 
-{{% alert note %}}
-Click the *Cite* button above to demo the feature to enable visitors to import publication metadata into their reference management software.
-{{% /alert %}}
 
-{{% alert note %}}
-Click the *Slides* button above to demo academia's Markdown slides feature.
-{{% /alert %}}
+**DOI:** [10.3141/2662-01](https://doi.org/10.3141/2662-01)
+
+**PDF:** Not open access

@@ -25,10 +25,7 @@ tags:
 title: Adjusting local alcohol consumption data for influence of tourists
 ---
 
-{{% alert note %}}
-Click the *Cite* button above to demo the feature to enable visitors to import publication metadata into their reference management software.
-{{% /alert %}}
 
-{{% alert note %}}
-Click the *Slides* button above to demo academia's Markdown slides feature.
-{{% /alert %}}
+**DOI:** [10.3109/14659891.2016.1140235](https://doi.org/10.3109/14659891.2016.1140235)
+
+**PDF:** Not open access

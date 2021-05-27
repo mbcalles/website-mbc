@@ -22,7 +22,7 @@ date: "2020-06-01"
 doi: "10.1016/j.aap.2020.105540"
 featured: true
 image:
-  caption: 'Image credit: [**Photo by Clem Onojeghu on Unsplash**](https://unsplash.com/photos/8H5uWWZ8-3I)'
+  caption: ''
   focal_point: ""
   preview_only: true
 projects: []
@@ -38,10 +38,10 @@ tags:
 title: Cyclist crash rates and risk factors in a prospective cohort in seven European cities
 ---
 
-{{% alert note %}}
-Click the *Cite* button above to demo the feature to enable visitors to import publication metadata into their reference management software.
-{{% /alert %}}
 
-{{% alert note %}}
-Click the *Slides* button above to demo academia's Markdown slides feature.
-{{% /alert %}}
+**Manuscript access:**
+
+**DOI:** [10.1016/j.aap.2020.105540](https://doi.org/10.1016/j.aap.2020.105540)
+
+**PDF:** Not open access 
+
