@@ -8,7 +8,7 @@ authors:
 - M. Anne Harris
 
 date: "2021-05-26"
-doi: "10.33137/utjph.v2i1.35209 "
+doi: "10.33137/utjph.v2i1.35209"
 featured: true
 image:
   caption: ''
@@ -29,12 +29,11 @@ tags:
 - Transportation
 - COVID-19 
 title: "Translating risk to preventable burden by estimating numbers of bicycling injuries preventable by separated infrastructure on a Toronto, Ontario corridor"
+
 ---
 
-{{% alert note %}}
-Click the *Cite* button above to demo the feature to enable visitors to import publication metadata into their reference management software.
-{{% /alert %}}
+**Manuscript access:**
 
-{{% alert note %}}
-Click the *Slides* button above to demo academia's Markdown slides feature.
-{{% /alert %}}
+**DOI:** [10.33137/utjph.v2i1.35209](https://utjph.com/index.php/utjph/article/view/35209)
+
+**PDF:** [Full text](./manuscript.pdf)

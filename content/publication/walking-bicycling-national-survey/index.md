@@ -34,10 +34,8 @@ tags:
 title: "Estimating walking and bicycling in Canada and their road collision fatality risks: The need for a national household travel survey"
 ---
 
-{{% alert note %}}
-Click the *Cite* button above to demo the feature to enable visitors to import publication metadata into their reference management software.
-{{% /alert %}}
+**Manuscript access:**
 
-{{% alert note %}}
-Click the *Slides* button above to demo academia's Markdown slides feature.
-{{% /alert %}}
+**DOI:** [10.1016/j.pmedr.2021.101366](https://doi.org/10.1016/j.pmedr.2021.101366)
+
+**PDF:** [Full text](./manuscript.pdf) 
