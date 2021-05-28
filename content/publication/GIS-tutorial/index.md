@@ -10,7 +10,7 @@ doi: ""
 featured: true
 image:
   caption: ''
-  focal_point: ""
+  focal_point: "top"
   preview_only: true
 projects: []
 publication: 'bookdown.org'
