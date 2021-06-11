@@ -42,5 +42,5 @@ title: "Impacts of study design on sample size, participation bias, and outcome 
 
 **DOI:** [10.1016/j.jth.2019.100651](https://doi.org/10.1016/j.jth.2019.100651)
 
-**PDF:** Not open access 
+**Accepted Manuscript:** [Full text](./manuscript.pdf) 
 
