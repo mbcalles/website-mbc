@@ -34,4 +34,4 @@ title: 'Associations between individual characteristics, availability of bicycle
 
 **DOI:** [10.1016/j.tra.2018.10.024](https://doi.org/10.1016/j.tra.2018.10.024)
 
-**PDF:** Not open access 
+**Accepted Manuscript:** [Full text](./manuscript.pdf) 
