@@ -43,5 +43,4 @@ title: Cyclist crash rates and risk factors in a prospective cohort in seven Eur
 
 **DOI:** [10.1016/j.aap.2020.105540](https://doi.org/10.1016/j.aap.2020.105540)
 
-**PDF:** Not open access 
-
+**Accepted Manuscript:** [Full text](./manuscript.pdf) 
