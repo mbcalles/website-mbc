@@ -9,7 +9,7 @@ title = "Academia"
 
 # Hero image (optional). Enter filename of an image in the `static/img/` folder.
  
-#hero_media = "mbc_headshot.jpg"
+#hero_media = "mbc_photo.jpeg"
 
 [design.background]
   # Apply a background color, gradient, or image.
