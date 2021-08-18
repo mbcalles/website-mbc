@@ -13,7 +13,7 @@ doi: "10.1080/21650020.2021.1964376"
 featured: true
 image:
   caption: 'Image credit: []()'
-  focal_point: "bottom"
+  focal_point: "middle"
   preview_only: true
 projects: []
 publication: '*Urban, Planning and Transport Research, 9* (1)'
