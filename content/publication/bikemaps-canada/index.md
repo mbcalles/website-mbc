@@ -21,7 +21,7 @@ publication_short: ""
 publication_types:
 - "2"
 publishDate: "2021-08-13"
-summary: We found bicyclists with greater spatial access to bicycling specific infrastructure had a higher likelihood of perceiving bicycling to be safe.
+summary: Crowdsource bicycling incident reports across 9 Canadian cities suggest dangerous passes are the most commonly reported bicycling incidents, with the highest ratio of near misses to collisions (9:1) while incident types leading to highest proportion of injury were with motor vehicles turning left. 
 tags:
 - Crowdsourced
 - Bicycle
