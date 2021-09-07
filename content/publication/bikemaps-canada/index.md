@@ -36,3 +36,11 @@ title: 'Crowdsourced bicycling crashes and near misses: trends in Canadian citie
 **DOI:** [10.1080/21650020.2021.1964376](https://doi.org/10.1080/21650020.2021.1964376)
 
 **Accepted Manuscript:** [Full text](./manuscript.pdf) 
+
+# Altmetric badge 
+
+<script type='text/javascript' src='https://d1bxh8uas1mnw7.cloudfront.net/assets/embed.js'></script>
+
+<div data-badge-popover="right" data-badge-type="medium-donut" data-doi="10.1038/nature.2014.14583" data-hide-no-mentions="true" class="altmetric-embed"></div>
+
+
