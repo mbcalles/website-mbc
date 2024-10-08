@@ -6,7 +6,7 @@ authors:
 - Linda Rothman
 - M. Anne Harris
 
-date: "2024-04-01"
+date: "2024-03-01"
 doi: "10.1097/EDE.0000000000001696"
 featured: true
 image:
@@ -18,7 +18,7 @@ publication: '*Epidemiology, 35* (2)'
 publication_short: ""
 publication_types:
 - "2"
-publishDate: "2024-04"
+publishDate: "2024-03"
 summary:  We observed significant inequities in transportation injury risk requiring hospitalization, with higher incidence rates among low-income and Indigenous populations for injuries involving motor vehicle occupants, pedestrians, and cyclists 
 tags:
 - Survey Data
