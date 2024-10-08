@@ -21,10 +21,13 @@ publication_types:
 publishDate: "2024-03"
 summary:  We observed significant inequities in transportation injury risk requiring hospitalization, with higher incidence rates among low-income and Indigenous populations for injuries involving motor vehicle occupants, pedestrians, and cyclists 
 tags:
-- Survey Data
-- Commute mode
-- COVID-19
-
+- Active transport
+- CanCHEC
+- Cyclists
+- Inequity
+- Motor vehicle collisions
+- Pedestrians
+- Road safety
 title: Risk Factors and Inequities in Transportation Injury and Mortality in the Canadian Census Health and Environment Cohorts (CanCHECs)
 ---
 

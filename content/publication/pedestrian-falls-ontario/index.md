@@ -21,10 +21,9 @@ publication_types:
 publishDate: "2024-07"
 summary:  More than 50% of detected pedestrian injuries were falls in the street or roadway, which may be missed if users of administrative data rely solely on pedestrian external cause codes for detection; although on-street falls were more common in individuals aged 65 and older, they contributed to the burden of injury requiring emergency department visits across all age groups; additionally, an increasing percentage of bicycling injuries were classified as ‘in-traffic’ but not resulting from motor vehicle collisions over the 15-year observation period; healthcare records offer a means to detect these injuries that are likely overlooked by police reporting.
 tags:
-- Survey Data
-- Commute mode
-- COVID-19
-
+- Pedestrian fall
+- Injury
+- Surveillance
 title: Ascertainment and description of pedestrian and bicycling injuries and fatalities in Ontario from administrative health records 2003–2017: contributions of non-collision falls and crashes
 ---
 
