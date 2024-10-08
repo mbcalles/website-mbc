@@ -57,20 +57,7 @@ As a postdoctoral research fellow at the University of British Columbia, I lead 
 I specialize in the following areas:
 
 - **Injury Epidemiology**: Analyzing patterns of injury and risk factors across populations.
-- **Statistical Modeling**: Using advanced models to understand health outcomes in diverse groups.
-- **Data Integration**: Merging and analyzing large, linked datasets from police reports, insurance claims, hospital admissions, and more to uncover insights into transportation-related injuries.
-
-## Key Focus Areas
-
-- **Transportation Injuries**: Mapping and analyzing spatial patterns of injuries related to transportation.
+- **Spatial Analysis**: Using Geogaraphic Information Systems to combine health outcome data with geographic data and analyze spatial patterns of risk.
+- **Linked Data**: Merging and analyzing large, linked datasets from police reports, insurance claims, hospital admissions, and more to uncover insights into transportation-related injuries.
 - **Health Inequities**: Investigating how injury risks and burdens vary across different population groups.
-- **Data Source Evaluation**: Critically assessing and improving data quality in transportation injury research.
 
-## My Expertise
-
-I apply a range of advanced techniques in my work, including:
-
-- **Statistical Analysis**: Developing and applying models to explain injury trends and health outcomes.
-- **Spatial Analysis & GIS**: Mapping injury patterns and exploring geographic disparities.
-- **Machine Learning**: Using predictive models to identify factors that influence injury risk.
-- **Big Data Integration**: Managing and analyzing complex datasets to generate meaningful insights.
