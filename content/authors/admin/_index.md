@@ -48,25 +48,29 @@ user_groups:
 - Visitors
 ---
 
-I am a health geographer and epidemiologist specializing in advanced data analysis techniques to understand the complex relationships between injury, health, transportation, and socio-spatial inequalities. My interdisciplinary approach combines spatial analysis with robust epidemiological methods and non-spatial data analysis to provide comprehensive insights into public health challenges.
+I’m a health geographer and epidemiologist focused on using advanced data analysis to explore the complex relationships between injury, health, transportation, and social inequalities. My work combines spatial analysis with epidemiological methods to generate comprehensive insights that can address critical public health challenges.
 
-As a postdoctoral research fellow at the University of British Columbia, I lead research projects using complex, linked administrative databases. My work involves:
+As a postdoctoral research fellow at the University of British Columbia, I lead interdisciplinary research projects using complex, linked administrative databases. My goal is to produce actionable findings that contribute to creating safer and more equitable communities.
 
-1. Epidemiological analysis of injury patterns and risk factors
-2. Statistical modeling of health outcomes across diverse population groups
-3. Integration and analysis of linked injury and traffic crash data sources, including police reports, auto-insurance claims, hospital admissions, vital statistics, and socioeconomic indicators
+## My Research
 
-My research focus includes:
-- Spatial patterns of transportation-related injuries
-- Health inequities in injury risk and burden
-- Critical evaluation of data sources in transportation injury research
-- Development and application of novel analytical methods in injury epidemiology
+I specialize in the following areas:
 
-My methodological expertise spans:
-- Advanced statistical analysis and modeling
-- Spatial analysis and GIS techniques
-- Machine learning and predictive modeling
-- Big data integration and management
+- **Injury Epidemiology**: Analyzing patterns of injury and risk factors across populations.
+- **Statistical Modeling**: Using advanced models to understand health outcomes in diverse groups.
+- **Data Integration**: Merging and analyzing large, linked datasets from police reports, insurance claims, hospital admissions, and more to uncover insights into transportation-related injuries.
 
-My goal is to lead innovative research that bridges epidemiology, data science, and geography to address critical public health challenges. By leveraging diverse analytical methods and data sources, he aims to produce actionable insights that inform evidence-based policies for safer, more equitable communities.
+## Key Focus Areas
 
+- **Transportation Injuries**: Mapping and analyzing spatial patterns of injuries related to transportation.
+- **Health Inequities**: Investigating how injury risks and burdens vary across different population groups.
+- **Data Source Evaluation**: Critically assessing and improving data quality in transportation injury research.
+
+## My Expertise
+
+I apply a range of advanced techniques in my work, including:
+
+- **Statistical Analysis**: Developing and applying models to explain injury trends and health outcomes.
+- **Spatial Analysis & GIS**: Mapping injury patterns and exploring geographic disparities.
+- **Machine Learning**: Using predictive models to identify factors that influence injury risk.
+- **Big Data Integration**: Managing and analyzing complex datasets to generate meaningful insights.
