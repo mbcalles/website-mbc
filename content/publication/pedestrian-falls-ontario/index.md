@@ -23,7 +23,7 @@ tags:
 - Pedestrian fall
 - Injury
 - Surveillance
-title: Ascertainment and description of pedestrian and bicycling injuries and fatalities in Ontario from administrative health records 2003–2017: contributions of non-collision falls and crashes
+title: Ascertainment and description of pedestrian and bicycling injuries and fatalities in Ontario from administrative health records 2003–2017 - contributions of non-collision falls and crashes
 ---
 
 **Manuscript access:**
