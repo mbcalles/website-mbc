@@ -27,7 +27,7 @@ interests:
 name: Michael Branion-Calles
 organizations:
 - name: University of British Columbia
-  url: ""
+  url: "https://rsph.med.ubc.ca/"
 role: Postdoctoral Research Fellow
 social:
 - icon: envelope
