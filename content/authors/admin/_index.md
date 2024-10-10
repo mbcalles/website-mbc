@@ -2,7 +2,7 @@
 authors:
 - admin
 avatar_image: mbc_headshot.jpg
-#bio:
+bio: I’m a health geographer exploring relationships between injury, health, transportation, and social inequalities. My work combines spatial analysis with epidemiological methods to generate insights into public health challenges with a specific focus on road traffic injury and active transportation. As a postdoctoral research fellow at the University of British Columbia, I lead interdisciplinary research projects using large, linked administrative databases. My goal is to produce actionable findings that contribute to creating safer and more equitable communities.
 #btn:
 #- label: Download Resume
 #  url: https://sourcethemes.com/academic/docs/install/
@@ -48,8 +48,6 @@ user_groups:
 - Visitors
 ---
 
-I’m a health geographer exploring relationships between injury, health, transportation, and social inequalities. My work combines spatial analysis with epidemiological methods to generate comprehensive insights that can address critical public health challenges.
 
-As a postdoctoral research fellow at the University of British Columbia, I lead interdisciplinary research projects using large, linked administrative databases. My goal is to produce actionable findings that contribute to creating safer and more equitable communities.
 
 
