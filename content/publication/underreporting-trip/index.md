@@ -25,8 +25,7 @@ publication_short: ""
 publication_types:
 - "2"
 publishDate: "2025-03"
-summary:  We measured susbtantial underrep
-
+summary: We found gaps in how motor-vehicle traffic injuries are captured across British Columbia's administrative datasets, with insurance claims recording the highest percentage of injuries (95.7% for drivers, 83.3% for cyclists, 76.5% for pedestrians), yet substantial proportions of hospitalized individuals missing from both insurance and police records, particularly among vulnerable road users and low-income populations—potentially perpetuating inequities when these incomplete datasets inform safety investment priorities.
 tags:
 - Data linkage
 - Traffic injury
@@ -34,7 +33,7 @@ tags:
 - Selection bias
 - Underreporting
 - Inequity
-title: We found gaps in how motor-vehicle traffic injuries are captured across British Columbia's administrative datasets, with insurance claims recording the highest percentage of injuries (95.7% for drivers, 83.3% for cyclists, 76.5% for pedestrians), yet substantial proportions of hospitalized individuals missing from both insurance and police records, particularly among vulnerable road users and low-income populations—potentially perpetuating inequities when these incomplete datasets inform safety investment priorities.
+title: Underreporting and selection bias of serious road traffic injuries in auto insurance claims and police reports in British Columbia, Canada
 ---
 
 **Manuscript access:**
