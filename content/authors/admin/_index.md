@@ -33,9 +33,9 @@ social:
 - icon: envelope
   icon_pack: fas
   link: 'mailto:michael.calles@ubc.ca'
-- icon: twitter
+- icon: linkedin
   icon_pack: fab
-  link: https://twitter.com/mbrcalles
+  link: https://www.linkedin.com/in/michael-branion-calles-68b88215b/
 - icon: google-scholar
   icon_pack: ai
   link: https://scholar.google.com/citations?user=Yq8cIZMAAAAJ&hl=en
