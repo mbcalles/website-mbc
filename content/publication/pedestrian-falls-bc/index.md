@@ -26,6 +26,7 @@ publication_types:
 - "2"
 publishDate: "2025-04"
 summary: Pedestrian and cyclist falls cause more hospital admissions than collisions with motor vehicles in British Columbia, with falls accounting for 68.8% of pedestrian and 48.6% of cyclist admissions compared to 29.2% and 27.6% for vehicle collisions respectively.
+tags:
 - Pedestrian falls
 - Cyclist Falls
 - Sociodemographics
