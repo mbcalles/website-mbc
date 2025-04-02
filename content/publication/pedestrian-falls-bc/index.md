@@ -30,7 +30,7 @@ tags:
 - Pedestrian falls
 - Cyclist Falls
 - Sociodemographics
-title: "Comparing pedestrian and cyclist injuries from falls and collisions in British Columbia, Canada: Frequencies and population characteristics""
+title: "Comparing pedestrian and cyclist injuries from falls and collisions in British Columbia, Canada: Frequencies and population characteristics"
 ---
 
 **Manuscript access:**
