@@ -40,7 +40,7 @@ social:
   icon_pack: ai
   link: https://scholar.google.com/citations?user=Yq8cIZMAAAAJ&hl=en
 - icon: orcid
-  icon_pack: fab
+  icon_pack: ai
   link: https://orcid.org/0000-0002-3778-1176
 - icon: github
   icon_pack: fab
